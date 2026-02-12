@@ -158,3 +158,25 @@ function exportToCSV(key, filename) {
   link.download = filename || (key + '.csv');
   link.click();
 }
+
+function exportAllData() {
+  const keys = [
+    'factory_rawMaterials',
+    'factory_dateReceiving',
+    'factory_fermentation',
+    'factory_distillation1',
+    'factory_distillation2',
+    'factory_bottling',
+    'factory_inventory',
+    'factory_users'
+  ];
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  keys.forEach(key => {
+    // Only verify data exists before export
+    if (localStorage.getItem(key)) {
+      exportToCSV(key, key + '_' + today + '.csv');
+    }
+  });
+}

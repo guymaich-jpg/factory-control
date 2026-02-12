@@ -104,6 +104,12 @@ const I18N = {
     mod_bottleInventory: "Bottle Inventory",
     mod_rawInventory: "Raw Material Inventory",
 
+    // Settings
+    settings: "Settings",
+    dataExport: "Data Backup",
+    exportAllData: "Export Full Database (CSV)",
+    confirmExport: "Download full database backup?",
+
     // ---------- Raw Materials ----------
     rm_supplier: "Supplier",
     rm_receiveDate: "Receiving Date",
@@ -292,6 +298,11 @@ const I18N = {
     todayActivity: "פעילות היום",
 
     // ---------- Backoffice ----------
+    settings: "הגדרות",
+    dataExport: "גיבוי נתונים",
+    exportAllData: "ייצא מסד נתונים מלא (CSV)",
+    confirmExport: "להוריד גיבוי מלא?",
+
     backoffice: "ניהול מערכת",
     userManagement: "ניהול משתמשים",
     manageUsers: "נהל משתמשים",

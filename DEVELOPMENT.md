@@ -53,18 +53,20 @@ To release a new version, run:
 
 ---
 
-## 🔐 Backoffice Development
+## 🔐 User Management & Settings
 
-The Backoffice is located at `backoffice.html`.
-It shares logic with the main app but renders a different UI layout.
+The separate backoffice site has been deprecated.
+**User Management is now a "Settings" module inside the main app.**
 
-- **Files**: Shares `style.css`, `script.js`, `auth.js`.
-- **Logic**: Inside `script.js`, `isBackofficePage` detects the URL and renders `renderBackoffice()`.
+- **Access**: Only users with `canManageUsers` permission (e.g., Manager) can see the "Settings" tab in the bottom navigation.
+- **Components**: `renderSettings` in `script.js`.
+- **Logic**: Shares the same `auth.js` session.
 
-To test backoffice locally:
+To test Settings locally:
 1. Run `./start.sh` or `npm start`
-2. Go to `http://localhost:8080/backoffice.html`
-3. Log in as `admin` / `admin123`
+2. Go to `http://localhost:8080/`
+3. Log in as `manager` / `manager123`
+4. Click the **Settings** icon.
 
 ---
 

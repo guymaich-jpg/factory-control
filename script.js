@@ -11,11 +11,6 @@ let editingRecord = null;
 let signatureCanvas = null;
 let sigCtx = null;
 let sigDrawing = false;
-const isBackofficePage = window.location.pathname.includes('backoffice.html');
-
-if (isBackofficePage) {
-  currentScreen = 'backoffice';
-}
 
 // ---------- Helpers ----------
 const $ = sel => document.querySelector(sel);
@@ -72,8 +67,8 @@ function renderApp() {
     renderModuleDetail(content);
   } else if (currentModule && currentView === 'list') {
     renderModuleList(content);
-  } else if (currentScreen === 'backoffice') {
-    renderBackoffice(content);
+  } else if (currentScreen === 'settings') {
+    renderSettings(content);
   } else {
     renderDashboard(content);
   }
@@ -259,8 +254,8 @@ function renderHeader() {
   return `
     <div class="app-header">
       <div class="header-left">
-        ${isBackofficePage ? '' : (showBack ? `<button class="header-back" id="header-back"><i data-feather="arrow-left"></i></button>` : '')}
-        <span class="header-title">${isBackofficePage ? t('backoffice') : title}</span>
+        ${showBack ? `<button class="header-back" id="header-back"><i data-feather="arrow-left"></i></button>` : ''}
+        <span class="header-title">${title}</span>
       </div>
       <div class="header-right">
         <span class="user-badge"><span class="role-dot ${roleClass}"></span>${session.name}</span>
@@ -296,34 +291,8 @@ function renderBottomNav() {
     { id: 'inventory', icon: 'database', label: 'nav_inventory' },
   ];
 
-  // If on main app, show link to backoffice for admins
-  // If on backoffice app, show link to main app
-
-  if (isBackofficePage) {
-    // Only show "Back to App" and "User Management"
-    return `
-      <nav class="bottom-nav">
-        <a href="index.html" class="nav-item">
-          <i data-feather="home"></i>
-          App
-        </a>
-        <button class="nav-item active">
-          <i data-feather="users"></i>
-          ${t('userManagement')}
-        </button>
-      </nav>
-    `;
-  }
-
-  // Main App Navigation
-  let backofficeLink = '';
-  if (hasPermission('canAccessBackoffice')) {
-    backofficeLink = `
-      <a href="backoffice.html" class="nav-item">
-        <i data-feather="settings"></i>
-        ${t('nav_backoffice')}
-      </a>
-    `;
+  if (hasPermission('canManageUsers')) {
+    items.push({ id: 'settings', icon: 'settings', label: 'settings' });
   }
 
   return `
@@ -334,7 +303,6 @@ function renderBottomNav() {
           ${t(it.label)}
         </button>
       `).join('')}
-      ${backofficeLink}
     </nav>
   `;
 }
@@ -354,7 +322,7 @@ function bindNav() {
       else if (nav === 'bottling') { currentModule = 'bottling'; }
       else if (nav === 'bottling') { currentModule = 'bottling'; }
       else if (nav === 'inventory') { currentModule = 'inventory'; }
-      else if (nav === 'backoffice') { currentModule = null; }
+      else if (nav === 'settings') { currentModule = null; }
 
       renderApp();
     });
@@ -1197,8 +1165,8 @@ function getModuleFields(mod) {
 // BACKOFFICE UI
 // ============================================================
 
-function renderBackoffice(container) {
-  if (!hasPermission('canAccessBackoffice')) {
+function renderSettings(container) {
+  if (!hasPermission('canManageUsers')) {
     container.innerHTML = `<div class="perm-overlay"><i data-feather="lock"></i><p>${t('perm_denied')}</p></div>`;
     return;
   }
@@ -1211,22 +1179,32 @@ function renderBackoffice(container) {
   }
 
   container.innerHTML = `
-    <div class="section-title">${t('userManagement')}</div>
-    
-    <div class="record-list">
-      ${users.map(u => `
-        <div class="record-item user-item" data-username="${u.username}">
-          <div class="ri-top">
-            <span class="ri-title">${u.username} <small style="color:var(--text-muted)">(${t('role_' + u.role)})</small></span>
-            <span class="ri-badge ${u.status === 'inactive' ? 'not-approved' : 'approved'}">
-              ${u.status === 'inactive' ? t('inactive') : t('active')}
-            </span>
-          </div>
-          <div class="ri-details">
-            ${u.name || '-'} &bull; ${u.nameHe || u.nameTh || '-'}
-          </div>
+    <div class="settings-container">
+      
+      <div class="section-title" style="margin-top: 16px;">${t('dataExport')}</div>
+      <div class="settings-group">
+        <div class="record-item" id="btn-export-all" style="justify-content: center; align-items: center; color: var(--accent);">
+          <i data-feather="download" style="margin-right: 8px;"></i>
+          <span style="font-weight:600">${t('exportAllData')}</span>
         </div>
-      `).join('')}
+      </div>
+
+      <div class="section-title" style="margin-top:24px">${t('userManagement')}</div>
+      <div class="record-list">
+        ${users.map(u => `
+          <div class="record-item user-item" data-username="${u.username}">
+            <div class="ri-top">
+              <span class="ri-title">${u.username} <small style="color:var(--text-muted)">(${t('role_' + u.role)})</small></span>
+              <span class="ri-badge ${u.status === 'inactive' ? 'not-approved' : 'approved'}">
+                ${u.status === 'inactive' ? t('inactive') : t('active')}
+              </span>
+            </div>
+            <div class="ri-details">
+              ${u.name || '-'} &bull; ${u.nameHe || u.nameTh || '-'}
+            </div>
+          </div>
+        `).join('')}
+      </div>
     </div>
   `;
 
@@ -1239,6 +1217,13 @@ function renderBackoffice(container) {
     renderApp();
   });
   container.appendChild(fab);
+
+  // Bind export
+  container.querySelector('#btn-export-all').addEventListener('click', () => {
+    if (confirm('Download all data as CSV?')) {
+      exportAllData();
+    }
+  });
 
   // Bind user items to edit
   container.querySelectorAll('.user-item').forEach(item => {
@@ -1291,7 +1276,6 @@ function renderUserForm(container) {
         <select class="form-select" id="bo-role">
           <option value="worker" ${u.role === 'worker' ? 'selected' : ''}>${t('role_worker')}</option>
           <option value="manager" ${u.role === 'manager' ? 'selected' : ''}>${t('role_manager')}</option>
-          <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>${t('role_admin')}</option>
         </select>
       </div>
       
