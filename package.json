@@ -1,7 +1,7 @@
 {
   "name": "factory-control-app",
-  "version": "1.0.0",
-  "description": "Alcohol Production Documentation App - Bilingual (English/Thai) mobile-first web application for distillery production tracking",
+  "version": "1.1.0",
+  "description": "Alcohol Production Documentation App - Bilingual (Hebrew/Thai) mobile-first web application for distillery production tracking",
   "main": "index.html",
   "scripts": {
     "start": "python3 -m http.server 8080",
