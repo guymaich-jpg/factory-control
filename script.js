@@ -3,6 +3,7 @@
 // ============================================================
 
 // ---------- State ----------
+// ---------- State ----------
 let currentScreen = 'dashboard';
 let currentModule = null;   // which form/list is open
 let currentView = 'list';   // 'list' | 'form' | 'detail'
@@ -10,6 +11,11 @@ let editingRecord = null;
 let signatureCanvas = null;
 let sigCtx = null;
 let sigDrawing = false;
+const isBackofficePage = window.location.pathname.includes('backoffice.html');
+
+if (isBackofficePage) {
+  currentScreen = 'backoffice';
+}
 
 // ---------- Helpers ----------
 const $ = sel => document.querySelector(sel);
@@ -253,8 +259,8 @@ function renderHeader() {
   return `
     <div class="app-header">
       <div class="header-left">
-        ${showBack ? `<button class="header-back" id="header-back"><i data-feather="arrow-left"></i></button>` : ''}
-        <span class="header-title">${title}</span>
+        ${isBackofficePage ? '' : (showBack ? `<button class="header-back" id="header-back"><i data-feather="arrow-left"></i></button>` : '')}
+        <span class="header-title">${isBackofficePage ? t('backoffice') : title}</span>
       </div>
       <div class="header-right">
         <span class="user-badge"><span class="role-dot ${roleClass}"></span>${session.name}</span>
@@ -290,9 +296,36 @@ function renderBottomNav() {
     { id: 'inventory', icon: 'database', label: 'nav_inventory' },
   ];
 
-  if (hasPermission('canAccessBackoffice')) {
-    items.push({ id: 'backoffice', icon: 'settings', label: 'nav_backoffice' });
+  // If on main app, show link to backoffice for admins
+  // If on backoffice app, show link to main app
+
+  if (isBackofficePage) {
+    // Only show "Back to App" and "User Management"
+    return `
+      <nav class="bottom-nav">
+        <a href="index.html" class="nav-item">
+          <i data-feather="home"></i>
+          App
+        </a>
+        <button class="nav-item active">
+          <i data-feather="users"></i>
+          ${t('userManagement')}
+        </button>
+      </nav>
+    `;
   }
+
+  // Main App Navigation
+  let backofficeLink = '';
+  if (hasPermission('canAccessBackoffice')) {
+    backofficeLink = `
+      <a href="backoffice.html" class="nav-item">
+        <i data-feather="settings"></i>
+        ${t('nav_backoffice')}
+      </a>
+    `;
+  }
+
   return `
     <nav class="bottom-nav">
       ${items.map(it => `
@@ -301,6 +334,7 @@ function renderBottomNav() {
           ${t(it.label)}
         </button>
       `).join('')}
+      ${backofficeLink}
     </nav>
   `;
 }

@@ -5,8 +5,8 @@
   "main": "index.html",
   "scripts": {
     "start": "python3 -m http.server 8080",
-    "dev": "python3 -m http.server 8080",
-    "test": "open tests.html"
+    "test": "open tests.html",
+    "test:compat": "open tests/compatibility.html"
   },
   "keywords": [
     "distillery",

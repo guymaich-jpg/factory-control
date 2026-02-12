@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Compatibility Tests</title>
+    <script src="legacy_data.js"></script>
+    <!-- Load App -->
+    <script src="../i18n.js"></script>
+    <script src="../auth.js"></script>
+    <script src="../data.js"></script>
+    <script src="../script.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+        }
+
+        .status {
+            font-weight: bold;
+        }
+
+        .pass {
+            color: green;
+        }
+
+        .fail {
+            color: red;
+        }
+
+        #app {
+            display: none;
+        }
+
+        /* Run headless-ish */
+    </style>
+</head>
+
+<body>
+    <h1>Backward Compatibility Test Suite</h1>
+    <p>Verifying that current code can load v1.0 data schemas.</p>
+
+    <ul id="results"></ul>
+
+    <div id="app"></div> <!-- App renders here -->
+
+    <script>
+        const results = document.getElementById('results');
+
+        function log(msg, passed) {
+            const li = document.createElement('li');
+            li.innerHTML = `<span class="status ${passed ? 'pass' : 'fail'}">${passed ? 'PASS' : 'FAIL'}</span>: ${msg}`;
+            results.appendChild(li);
+        }
+
+        try {
+            // 1. Inject Data
+            injectLegacyData();
+            log("Data v1 injected successfully", true);
+
+            // 2. Mock 'todayStr' and localized dates to test rendering stability
+            // App loads immediately due to DOMContentLoaded in script.js, but let's re-render
+            // We need to wait for DOMContentLoaded to fire
+
+            setTimeout(() => {
+                try {
+                    const app = document.getElementById('app');
+
+                    // Test A: Does Dashboard Render?
+                    if (app.innerHTML.includes('Legacy Admin')) {
+                        log("Dashboard rendered correctly with legacy session", true);
+                    } else {
+                        log("Dashboard failed to render user name", false);
+                    }
+
+                    // Test B: Navigate to Raw Materials
+                    currentModule = 'rawMaterials';
+                    currentView = 'list';
+                    renderApp();
+
+                    const rmContent = app.innerHTML;
+                    if (rmContent.includes('Tamartushka') && rmContent.includes('Test Spice')) {
+                        log("Raw Materials module loaded legacy data correctly", true);
+                    } else {
+                        log("Raw Materials module failed to display legacy record", false);
+                    }
+
+                    // Test C: Data integrity (check logic)
+                    const records = getData('factory_rawMaterials');
+                    if (records.length === 1 && records[0].id === 'rm_1') {
+                        log("Data retrieval logic remains compatible", true);
+                    } else {
+                        log("Data retrieval logic broken", false);
+                    }
+
+                    // Cleanup
+                    // localStorage.clear(); 
+
+                } catch (e) {
+                    log("Runtime error during test: " + e.message, false);
+                    console.error(e);
+                }
+            }, 500);
+
+        } catch (e) {
+            log("Setup failed: " + e.message, false);
+        }
+    </script>
+</body>
+
+</html>
