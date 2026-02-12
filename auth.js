@@ -59,6 +59,15 @@ function getUsers() {
   if (!users) {
     users = DEFAULT_USERS;
     localStorage.setItem('factory_users', JSON.stringify(users));
+  } else {
+    // Ensure admin user exists (migration)
+    if (!users.find(u => u.username === 'admin')) {
+      const adminUser = DEFAULT_USERS.find(u => u.username === 'admin');
+      if (adminUser) {
+        users.push(adminUser);
+        localStorage.setItem('factory_users', JSON.stringify(users));
+      }
+    }
   }
   return users;
 }
