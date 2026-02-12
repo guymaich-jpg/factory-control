@@ -235,7 +235,7 @@ const I18N = {
   he: {
     // ---------- Global ----------
     appName: "בקרת מפעל",
-    langToggle: "EN",
+    langToggle: "ไทย",
     logout: "התנתק",
     save: "שמור",
     cancel: "בטל",
@@ -459,6 +459,236 @@ const I18N = {
     sup_gamliel: "גמליאל",
     sup_lara: "לארה",
     sup_other: "אחר",
+  },
+
+  th: {
+    // ---------- Global ----------
+    appName: "ระบบควบคุมโรงงาน",
+    langToggle: "עב",
+    logout: "ออกจากระบบ",
+    save: "บันทึก",
+    cancel: "ยกเลิก",
+    delete: "ลบ",
+    edit: "แก้ไข",
+    back: "กลับ",
+    submit: "ส่ง",
+    confirm: "ยืนยัน",
+    yes: "ใช่",
+    no: "ไม่",
+    done: "เสร็จสิ้น",
+    notDone: "ยังไม่เสร็จ",
+    notes: "หมายเหตุ",
+    date: "วันที่",
+    today: "วันนี้",
+    search: "ค้นหา…",
+    noData: "ยังไม่มีข้อมูล",
+    addNew: "เพิ่มใหม่",
+    history: "ประวัติ",
+    required: "จำเป็น",
+    optional: "ไม่ต้องระบุ",
+    saved: "บันทึกสำเร็จ!",
+    exportCSV: "ส่งออก CSV",
+    dashboard: "แดชบอร์ด",
+    settings: "ตั้งค่า",
+    recentEntries: "รายการล่าสุด",
+    viewAll: "ดูทั้งหมด",
+    totalRecords: "บันทึกทั้งหมด",
+    normal: "ปกติ",
+    abnormal: "ผิดปกติ",
+    approved: "อนุมัติแล้ว",
+    notApproved: "ไม่อนุมัติ",
+    selectOne: "-- เลือก --",
+    addNote: "เพิ่มบันทึก…",
+    loginTitle: "ระบบควบคุมโรงงาน",
+    loginSubtitle: "การบันทึกข้อมูลการผลิตแอลกอฮอล์",
+    username: "ชื่อผู้ใช้",
+    password: "รหัสผ่าน",
+    login: "เข้าสู่ระบบ",
+    loginError: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง",
+    signUp: "สมัครสมาชิก",
+    signUpTitle: "สร้างบัญชี",
+    signUpSubtitle: "เข้าร่วมทีมโรงงาน",
+    fullName: "ชื่อ-นามสกุล",
+    confirmPassword: "ยืนยันรหัสผ่าน",
+    selectRole: "เลือกบทบาท",
+    alreadyHaveAccount: "มีบัญชีอยู่แล้ว?",
+    dontHaveAccount: "ยังไม่มีบัญชี?",
+    signUpError_userExists: "ชื่อผู้ใช้ถูกใช้ไปแล้ว",
+    signUpError_passwordMismatch: "รหัสผ่านไม่ตรงกัน",
+    signUpError_passwordShort: "รหัสผ่านต้องมีอย่างน้อย 4 ตัวอักษร",
+    signUpError_fillAll: "กรุณากรอกข้อมูลให้ครบทุกช่อง",
+    signUpSuccess: "สร้างบัญชีสำเร็จ! คุณสามารถเข้าสู่ระบบได้แล้ว",
+    role_manager: "ผู้จัดการ",
+    role_worker: "พนักงาน",
+    role_admin: "ผู้ดูแลระบบ",
+    welcome: "ยินดีต้อนรับ",
+    quickActions: "การดำเนินการด่วน",
+    productionOverview: "ภาพรวมการผลิต",
+    todayActivity: "กิจกรรมของวันนี้",
+
+    // ---------- Backoffice ----------
+    backoffice: "หลังบ้าน",
+    userManagement: "การจัดการผู้ใช้",
+    manageUsers: "จัดการผู้ใช้",
+    addUser: "เพิ่มผู้ใช้",
+    editUser: "แก้ไขผู้ใช้",
+    deleteUser: "ลบผู้ใช้",
+    userList: "รายชื่อผู้ใช้",
+    permissions: "สิทธิ์การใช้งาน",
+    active: "เปิดใช้งาน",
+    inactive: "ปิดใช้งาน",
+    lastLogin: "เข้าสู่ระบบล่าสุด",
+    createdAt: "สร้างเมื่อ",
+    actions: "การดำเนินการ",
+    email: "อีเมล",
+    phone: "โทรศัพท์",
+    status: "สถานะ",
+
+    // ---------- Nav ----------
+    nav_dashboard: "แดชบอร์ด",
+    nav_receiving: "การรับของ",
+    nav_production: "การผลิต",
+    nav_bottling: "การบรรจุขวด",
+    nav_inventory: "คลังสินค้า",
+    nav_backoffice: "หลังบ้าน",
+
+    // ---------- Module Titles ----------
+    mod_rawMaterials: "การรับวัตถุดิบ",
+    mod_dateReceiving: "การรับอินทผลัม",
+    mod_fermentation: "การหมัก",
+    mod_distillation1: "การกลั่นครั้งที่ 1",
+    mod_distillation2: "การกลั่นครั้งที่ 2",
+    mod_bottling: "QA การบรรจุขวด",
+    mod_inventory: "คลังสินค้า",
+    mod_bottleInventory: "คลังขวด",
+    mod_rawInventory: "คลังวัตถุดิบ",
+
+    // Settings
+    settings: "การตั้งค่า",
+    dataExport: "สำรองข้อมูล",
+    exportAllData: "ส่งออกฐานข้อมูลทั้งหมด (CSV)",
+    confirmExport: "ดาวน์โหลดสำรองข้อมูลทั้งหมด?",
+
+    // ---------- Raw Materials ----------
+    rm_supplier: "ผู้จำหน่าย",
+    rm_receiveDate: "วันที่ได้รับ",
+    rm_category: "หมวดหมู่",
+    rm_item: "รายการเฉพาะ",
+    rm_weight: "น้ำหนัก / จำนวน",
+    rm_unit: "หน่วย",
+    rm_expiry: "วันหมดอายุ",
+    rm_tithing: "จ่ายทศางค์แล้ว",
+    rm_healthCert: "ใบรับรองกระทรวงสาธารณสุข",
+    rm_kosher: "ใบรับรองโคเชอร์",
+    rm_cat_spices: "เครื่องเทศ",
+    rm_cat_labels: "ฉลาก",
+    rm_cat_packaging: "บรรจุภัณฑ์",
+
+    // ---------- Date Receiving ----------
+    dr_supplier: "ผู้จำหน่าย",
+    dr_receiveDate: "วันที่ได้รับ",
+    dr_weight: "น้ำหนัก (กก.)",
+    dr_tithing: "การจ่ายทศางค์",
+    dr_expiryPeriod: "ระยะเวลาหมดอายุ",
+    dr_expiryPeriod_1year: "1 ปี",
+    dr_expiryPeriod_custom: "กำหนดเอง",
+    dr_qtyInDate: "จำนวนในวันที่",
+
+    // ---------- Fermentation ----------
+    fm_date: "วันที่",
+    fm_tankSize: "ขนาดถัง (ลิตร)",
+    fm_datesKg: "อินทผลัมที่เพิ่ม (กก.)",
+    fm_quantity: "จำนวน (ลิตร)",
+    fm_temperature: "อุณหภูมิ (°C)",
+    fm_sugar: "ปริมาณน้ำตาล",
+    fm_ph: "pH",
+    fm_sentToDistillation: "ส่งไปกลั่น",
+
+    // ---------- Distillation 1 ----------
+    d1_date: "วันที่",
+    d1_type: "ประเภท",
+    d1_stillName: "ชื่อเครื่องกลั่น",
+    d1_fermDate: "วันที่หมัก",
+    d1_distQty: "ปริมาณการกลั่น (ลิตร)",
+    d1_initAlcohol: "แอลกอฮอล์เริ่มต้น %",
+    d1_initTemp: "อุณหภูมิเริ่มต้น (°C)",
+    d1_finalAlcohol: "แอลกอฮอล์สุดท้าย %",
+    d1_temp: "อุณหภูมิ (°C)",
+    d1_timeRange: "ช่วงเวลา",
+    d1_distilledQty: "ปริมาณที่กลั่นได้ (ลิตร)",
+    d1_type_dist1: "การกลั่น 1",
+    d1_type_tailsArak: "ส่วนหาง - อารัก",
+    d1_type_tailsGin: "ส่วนหาง - จิน",
+    d1_type_tailsEDV: "ส่วนหาง - EDV",
+    d1_type_cleaning: "การกลั่นเพื่อทำความสะอาด",
+    d1_still_amiti: "Amiti",
+    d1_still_aladdin: "Aladdin",
+
+    // ---------- Distillation 2 ----------
+    d2_date: "วันที่",
+    d2_productType: "ประเภทผลิตภัณฑ์",
+    d2_d1Dates: "วันที่กลั่น 1",
+    d2_batchNumber: "เลขรหัสการผลิต",
+    d2_initAlcohol: "แอลกอฮอล์เริ่มต้น %",
+    d2_headSep: "การแยกส่วนหัว (5 ลิตร)",
+    d2_tailAlcohol: "การแยกส่วนหาง %",
+    d2_temp: "อุณหภูมิ (°C)",
+    d2_timeRange: "ช่วงเวลา",
+    d2_quantity: "จำนวน (ลิตร)",
+
+    // ---------- Bottling ----------
+    bt_drinkType: "ประเภทเครื่องดื่ม",
+    bt_bottlingDate: "วันที่บรรจุขวด",
+    bt_batchNumber: "เลขรหัสการผลิต",
+    bt_barrelNumber: "เลขถัง",
+    bt_d2Date: "วันที่กลั่น 2",
+    bt_alcohol: "แอลกอฮอล์ %",
+    bt_filtered: "ผ่านการกรอง",
+    bt_color: "สี",
+    bt_taste: "รสชาติและกลิ่น",
+    bt_contaminants: "ปราศจากสิ่งปนเปื้อน",
+    bt_bottleCount: "จำนวนขวด",
+    bt_decision: "การตัดสินใจ",
+    bt_qaSignature: "ลายเซ็น QA",
+
+    // ---------- Drink Types ----------
+    drink_arak: "Arak",
+    drink_gin: "Gin",
+    drink_edv: "EDV",
+    drink_licorice: "Licorice",
+    drink_brandyVS: "Brandy VS",
+    drink_brandyVSOP: "Brandy VSOP",
+    drink_brandyMed: "Mediterranean Brandy",
+
+    // ---------- Inventory ----------
+    inv_drinkType: "ประเภทเครื่องดื่ม",
+    inv_warehouseQty: "จำนวนในคลัง",
+    inv_item: "รายการ",
+    inv_component: "ส่วนประกอบ",
+    inv_unit: "หน่วย",
+    inv_stock: "สต็อก",
+    inv_bottles: "ขวดและจุก",
+    inv_labels: "ฉลาก",
+    inv_spices: "เครื่องเทศ",
+    inv_dates: "อินทผลัม",
+    inv_cartons: "กล่อง",
+
+    // ---------- Permissions ----------
+    perm_denied: "คุณไม่มีสิทธิ์เข้าถึงฟีเจอร์นี้",
+    perm_managerOnly: "เข้าถึงได้เฉพาะผู้จัดการ",
+    perm_deleteConfirm: "คุณแน่ใจหรือไม่ว่าต้องการลบบันทึกนี้?",
+
+    // ---------- Suppliers ----------
+    sup_tamartushka: "Tamartushka",
+    sup_nichuchot: "Nichuchot Argaman",
+    sup_iherb: "I-HERB",
+    sup_shlr: "SH.L.R",
+    sup_pcsi: "PCSI",
+    sup_yakev: "Yakev HaEla",
+    sup_selfHarvest: "เก็บเกี่ยวเอง",
+    sup_gamliel: "Gamliel",
+    sup_lara: "Lara",
+    sup_other: "อื่นๆ",
   }
 };
 
@@ -471,12 +701,13 @@ function t(key) {
 function setLang(lang) {
   currentLang = lang;
   localStorage.setItem('factory_lang', lang);
-  document.documentElement.lang = lang === 'he' ? 'he' : 'en';
+  document.documentElement.lang = lang;
   document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr';
   // Re-render current view
   if (typeof renderApp === 'function') renderApp();
 }
 
 function toggleLang() {
-  setLang(currentLang === 'en' ? 'he' : 'en');
+  // Toggle between hebrew and thai
+  setLang(currentLang === 'he' ? 'th' : 'he');
 }

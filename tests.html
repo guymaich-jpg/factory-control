@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +8,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
             background: #0f0f1a;
@@ -16,12 +22,25 @@
             max-width: 960px;
             margin: 0 auto;
         }
-        h1 { font-size: 28px; margin-bottom: 8px; }
-        .subtitle { color: #8888aa; margin-bottom: 24px; font-size: 14px; }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #8888aa;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+
         .summary {
-            display: flex; gap: 16px; margin-bottom: 32px;
+            display: flex;
+            gap: 16px;
+            margin-bottom: 32px;
             flex-wrap: wrap;
         }
+
         .summary-card {
             background: #1a1a2e;
             border: 1px solid #2a2a4a;
@@ -30,55 +49,155 @@
             text-align: center;
             min-width: 120px;
         }
-        .summary-card .num { font-size: 32px; font-weight: 700; }
-        .summary-card .label { font-size: 12px; color: #8888aa; margin-top: 4px; }
-        .num.pass { color: #34d399; }
-        .num.fail { color: #f87171; }
-        .num.total { color: #4f8cff; }
 
-        .section { margin-bottom: 32px; }
-        .section-title {
-            font-size: 16px; font-weight: 700; margin-bottom: 12px;
-            padding-bottom: 8px; border-bottom: 1px solid #2a2a4a;
-            display: flex; align-items: center; gap: 8px;
+        .summary-card .num {
+            font-size: 32px;
+            font-weight: 700;
         }
+
+        .summary-card .label {
+            font-size: 12px;
+            color: #8888aa;
+            margin-top: 4px;
+        }
+
+        .num.pass {
+            color: #34d399;
+        }
+
+        .num.fail {
+            color: #f87171;
+        }
+
+        .num.total {
+            color: #4f8cff;
+        }
+
+        .section {
+            margin-bottom: 32px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #2a2a4a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         .section-badge {
-            font-size: 11px; padding: 2px 8px; border-radius: 10px;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
             font-weight: 600;
         }
-        .section-badge.pass { background: rgba(52,211,153,0.15); color: #34d399; }
-        .section-badge.fail { background: rgba(248,113,113,0.15); color: #f87171; }
+
+        .section-badge.pass {
+            background: rgba(52, 211, 153, 0.15);
+            color: #34d399;
+        }
+
+        .section-badge.fail {
+            background: rgba(248, 113, 113, 0.15);
+            color: #f87171;
+        }
 
         .test-row {
-            display: flex; align-items: center; gap: 10px;
-            padding: 8px 12px; border-radius: 8px;
-            margin-bottom: 4px; font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            font-size: 13px;
         }
-        .test-row:nth-child(odd) { background: rgba(255,255,255,0.02); }
-        .test-icon { font-size: 16px; flex-shrink: 0; width: 20px; text-align: center; }
-        .test-icon.pass { color: #34d399; }
-        .test-icon.fail { color: #f87171; }
-        .test-name { flex: 1; }
-        .test-detail { color: #8888aa; font-size: 11px; max-width: 40%; text-align: right; }
+
+        .test-row:nth-child(odd) {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .test-icon {
+            font-size: 16px;
+            flex-shrink: 0;
+            width: 20px;
+            text-align: center;
+        }
+
+        .test-icon.pass {
+            color: #34d399;
+        }
+
+        .test-icon.fail {
+            color: #f87171;
+        }
+
+        .test-name {
+            flex: 1;
+        }
+
+        .test-detail {
+            color: #8888aa;
+            font-size: 11px;
+            max-width: 40%;
+            text-align: right;
+        }
 
         .run-btn {
-            background: #4f8cff; color: #fff; border: none; border-radius: 8px;
-            padding: 12px 32px; font-size: 15px; font-weight: 600;
-            cursor: pointer; margin-bottom: 24px; font-family: inherit;
+            background: #4f8cff;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 32px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 24px;
+            font-family: inherit;
         }
-        .run-btn:hover { background: #3a6fd8; }
-        .run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .timestamp { color: #555577; font-size: 12px; margin-bottom: 24px; }
+
+        .run-btn:hover {
+            background: #3a6fd8;
+        }
+
+        .run-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .timestamp {
+            color: #555577;
+            font-size: 12px;
+            margin-bottom: 24px;
+        }
 
         @media (max-width: 600px) {
-            body { padding: 16px; }
-            .summary { gap: 8px; }
-            .summary-card { min-width: 90px; padding: 12px 16px; }
-            .summary-card .num { font-size: 24px; }
-            .test-detail { display: none; }
+            body {
+                padding: 16px;
+            }
+
+            .summary {
+                gap: 8px;
+            }
+
+            .summary-card {
+                min-width: 90px;
+                padding: 12px 16px;
+            }
+
+            .summary-card .num {
+                font-size: 24px;
+            }
+
+            .test-detail {
+                display: none;
+            }
         }
     </style>
 </head>
+
 <body>
     <h1>Factory Control — Test Suite</h1>
     <p class="subtitle">Automated tests for i18n, auth, data layer, CSV export, permissions, and UI rendering</p>
@@ -92,802 +211,805 @@
     <script src="auth.js"></script>
     <script src="data.js"></script>
     <script>
-    // ============================================================
-    // Test Framework
-    // ============================================================
-    let tests = [];
-    let passed = 0;
-    let failed = 0;
-    let sections = {};
+        // ============================================================
+        // Test Framework
+        // ============================================================
+        let tests = [];
+        let passed = 0;
+        let failed = 0;
+        let sections = {};
 
-    function describe(sectionName, fn) {
-        sections[sectionName] = [];
-        const prevSection = window._currentSection;
-        window._currentSection = sectionName;
-        fn();
-        window._currentSection = prevSection;
-    }
-
-    function it(name, fn) {
-        const section = window._currentSection || 'General';
-        try {
+        function describe(sectionName, fn) {
+            sections[sectionName] = [];
+            const prevSection = window._currentSection;
+            window._currentSection = sectionName;
             fn();
-            tests.push({ section, name, pass: true });
-            if (!sections[section]) sections[section] = [];
-            sections[section].push({ name, pass: true });
-            passed++;
-        } catch (e) {
-            tests.push({ section, name, pass: false, error: e.message });
-            if (!sections[section]) sections[section] = [];
-            sections[section].push({ name, pass: false, error: e.message });
-            failed++;
+            window._currentSection = prevSection;
         }
-    }
 
-    function assert(condition, msg) {
-        if (!condition) throw new Error(msg || 'Assertion failed');
-    }
-
-    function assertEqual(actual, expected, msg) {
-        if (actual !== expected) {
-            throw new Error((msg || 'assertEqual') + ` — expected "${expected}", got "${actual}"`);
+        function it(name, fn) {
+            const section = window._currentSection || 'General';
+            try {
+                fn();
+                tests.push({ section, name, pass: true });
+                if (!sections[section]) sections[section] = [];
+                sections[section].push({ name, pass: true });
+                passed++;
+            } catch (e) {
+                tests.push({ section, name, pass: false, error: e.message });
+                if (!sections[section]) sections[section] = [];
+                sections[section].push({ name, pass: false, error: e.message });
+                failed++;
+            }
         }
-    }
 
-    function assertNotNull(val, msg) {
-        if (val === null || val === undefined) {
-            throw new Error((msg || 'assertNotNull') + ' — value is null/undefined');
+        function assert(condition, msg) {
+            if (!condition) throw new Error(msg || 'Assertion failed');
         }
-    }
 
-    function assertIncludes(str, substr, msg) {
-        if (typeof str !== 'string' || !str.includes(substr)) {
-            throw new Error((msg || 'assertIncludes') + ` — "${substr}" not found in "${str}"`);
+        function assertEqual(actual, expected, msg) {
+            if (actual !== expected) {
+                throw new Error((msg || 'assertEqual') + ` — expected "${expected}", got "${actual}"`);
+            }
         }
-    }
 
-    // ============================================================
-    // Clean state before each run
-    // ============================================================
-    function cleanState() {
-        // Remove all factory_ keys from localStorage
-        const keysToRemove = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && key.startsWith('factory_')) keysToRemove.push(key);
+        function assertNotNull(val, msg) {
+            if (val === null || val === undefined) {
+                throw new Error((msg || 'assertNotNull') + ' — value is null/undefined');
+            }
         }
-        keysToRemove.forEach(k => localStorage.removeItem(k));
-        // Reset i18n
-        currentLang = 'en';
-    }
 
-    // ============================================================
-    // TEST SUITES
-    // ============================================================
+        function assertIncludes(str, substr, msg) {
+            if (typeof str !== 'string' || !str.includes(substr)) {
+                throw new Error((msg || 'assertIncludes') + ` — "${substr}" not found in "${str}"`);
+            }
+        }
 
-    function runAllTests() {
-        tests = []; passed = 0; failed = 0; sections = {};
-        cleanState();
+        // ============================================================
+        // Clean state before each run
+        // ============================================================
+        function cleanState() {
+            // Remove all factory_ keys from localStorage
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('factory_')) keysToRemove.push(key);
+            }
+            keysToRemove.forEach(k => localStorage.removeItem(k));
+            // Reset i18n
+            currentLang = 'en';
+        }
 
-        // ---- 1. i18n ----
-        describe('i18n — Translation System', () => {
+        // ============================================================
+        // TEST SUITES
+        // ============================================================
 
-            it('EN: all core keys exist', () => {
-                const coreKeys = ['appName','login','logout','save','cancel','delete','edit','yes','no',
-                    'username','password','loginTitle','loginSubtitle','signUp','signUpTitle',
-                    'fullName','confirmPassword','selectRole','loginError'];
-                coreKeys.forEach(k => {
-                    assertNotNull(I18N.en[k], `Missing EN key: ${k}`);
+        function runAllTests() {
+            tests = []; passed = 0; failed = 0; sections = {};
+            cleanState();
+
+            // ---- 1. i18n ----
+            describe('i18n — Translation System', () => {
+
+                it('EN: all core keys exist', () => {
+                    const coreKeys = ['appName', 'login', 'logout', 'save', 'cancel', 'delete', 'edit', 'yes', 'no',
+                        'username', 'password', 'loginTitle', 'loginSubtitle', 'signUp', 'signUpTitle',
+                        'fullName', 'confirmPassword', 'selectRole', 'loginError'];
+                    coreKeys.forEach(k => {
+                        assertNotNull(I18N.en[k], `Missing EN key: ${k}`);
+                    });
+                });
+
+                it('TH: all core keys exist', () => {
+                    const coreKeys = ['appName', 'login', 'logout', 'save', 'cancel', 'delete', 'edit', 'yes', 'no',
+                        'username', 'password', 'loginTitle', 'loginSubtitle', 'signUp', 'signUpTitle',
+                        'fullName', 'confirmPassword', 'selectRole', 'loginError'];
+                    coreKeys.forEach(k => {
+                        assertNotNull(I18N.th[k], `Missing TH key: ${k}`);
+                    });
+                });
+
+                it('EN: all module title keys exist', () => {
+                    ['mod_rawMaterials', 'mod_dateReceiving', 'mod_fermentation',
+                        'mod_distillation1', 'mod_distillation2', 'mod_bottling', 'mod_inventory'].forEach(k => {
+                            assertNotNull(I18N.en[k], `Missing EN key: ${k}`);
+                        });
+                });
+
+                it('TH: all module title keys exist', () => {
+                    ['mod_rawMaterials', 'mod_dateReceiving', 'mod_fermentation',
+                        'mod_distillation1', 'mod_distillation2', 'mod_bottling', 'mod_inventory'].forEach(k => {
+                            assertNotNull(I18N.th[k], `Missing TH key: ${k}`);
+                        });
+                });
+
+                it('EN: all nav keys exist', () => {
+                    ['nav_dashboard', 'nav_receiving', 'nav_production', 'nav_bottling', 'nav_inventory'].forEach(k => {
+                        assertNotNull(I18N.en[k], `Missing EN key: ${k}`);
+                    });
+                });
+
+                it('TH: all nav keys exist', () => {
+                    ['nav_dashboard', 'nav_receiving', 'nav_production', 'nav_bottling', 'nav_inventory'].forEach(k => {
+                        assertNotNull(I18N.th[k], `Missing TH key: ${k}`);
+                    });
+                });
+
+                it('EN: all drink type keys exist', () => {
+                    DRINK_TYPES.forEach(k => {
+                        assertNotNull(I18N.en[k], `Missing EN drink key: ${k}`);
+                    });
+                });
+
+                it('TH: all drink type keys exist', () => {
+                    DRINK_TYPES.forEach(k => {
+                        assertNotNull(I18N.th[k], `Missing TH drink key: ${k}`);
+                    });
+                });
+
+                it('EN: all supplier keys exist', () => {
+                    [...SUPPLIERS_RAW, ...SUPPLIERS_DATES].forEach(k => {
+                        assertNotNull(I18N.en[k], `Missing EN supplier key: ${k}`);
+                    });
+                });
+
+                it('TH: all supplier keys exist', () => {
+                    [...SUPPLIERS_RAW, ...SUPPLIERS_DATES].forEach(k => {
+                        assertNotNull(I18N.th[k], `Missing TH supplier key: ${k}`);
+                    });
+                });
+
+                it('EN: all field label keys for all modules exist', () => {
+                    const allFieldKeys = [
+                        'rm_supplier', 'rm_receiveDate', 'rm_category', 'rm_item', 'rm_weight', 'rm_expiry',
+                        'rm_tithing', 'rm_healthCert', 'rm_kosher',
+                        'dr_supplier', 'dr_receiveDate', 'dr_weight', 'dr_tithing', 'dr_expiryPeriod',
+                        'fm_date', 'fm_tankSize', 'fm_datesKg', 'fm_quantity', 'fm_temperature', 'fm_sugar', 'fm_ph', 'fm_sentToDistillation',
+                        'd1_date', 'd1_type', 'd1_stillName', 'd1_fermDate', 'd1_distQty', 'd1_initAlcohol', 'd1_finalAlcohol', 'd1_temp', 'd1_timeRange', 'd1_distilledQty',
+                        'd2_date', 'd2_productType', 'd2_d1Dates', 'd2_batchNumber', 'd2_initAlcohol', 'd2_headSep', 'd2_tailAlcohol', 'd2_temp', 'd2_timeRange', 'd2_quantity',
+                        'bt_drinkType', 'bt_bottlingDate', 'bt_batchNumber', 'bt_barrelNumber', 'bt_d2Date', 'bt_alcohol', 'bt_filtered', 'bt_color', 'bt_taste', 'bt_contaminants', 'bt_bottleCount', 'bt_decision', 'bt_qaSignature',
+                    ];
+                    allFieldKeys.forEach(k => {
+                        assertNotNull(I18N.en[k], `Missing EN field key: ${k}`);
+                    });
+                });
+
+                it('TH: all field label keys for all modules exist', () => {
+                    const allFieldKeys = [
+                        'rm_supplier', 'rm_receiveDate', 'rm_category', 'rm_item', 'rm_weight', 'rm_expiry',
+                        'rm_tithing', 'rm_healthCert', 'rm_kosher',
+                        'dr_supplier', 'dr_receiveDate', 'dr_weight', 'dr_tithing', 'dr_expiryPeriod',
+                        'fm_date', 'fm_tankSize', 'fm_datesKg', 'fm_quantity', 'fm_temperature', 'fm_sugar', 'fm_ph', 'fm_sentToDistillation',
+                        'd1_date', 'd1_type', 'd1_stillName', 'd1_fermDate', 'd1_distQty', 'd1_initAlcohol', 'd1_finalAlcohol', 'd1_temp', 'd1_timeRange', 'd1_distilledQty',
+                        'd2_date', 'd2_productType', 'd2_d1Dates', 'd2_batchNumber', 'd2_initAlcohol', 'd2_headSep', 'd2_tailAlcohol', 'd2_temp', 'd2_timeRange', 'd2_quantity',
+                        'bt_drinkType', 'bt_bottlingDate', 'bt_batchNumber', 'bt_barrelNumber', 'bt_d2Date', 'bt_alcohol', 'bt_filtered', 'bt_color', 'bt_taste', 'bt_contaminants', 'bt_bottleCount', 'bt_decision', 'bt_qaSignature',
+                    ];
+                    allFieldKeys.forEach(k => {
+                        assertNotNull(I18N.th[k], `Missing TH field key: ${k}`);
+                    });
+                });
+
+                it('EN and TH have the same number of keys', () => {
+                    const enKeys = Object.keys(I18N.en).sort();
+                    const thKeys = Object.keys(I18N.th).sort();
+                    assertEqual(enKeys.length, thKeys.length, 'Key count mismatch');
+                });
+
+                it('Every EN key has a TH counterpart', () => {
+                    const missing = Object.keys(I18N.en).filter(k => !(k in I18N.th));
+                    assert(missing.length === 0, `TH missing keys: ${missing.join(', ')}`);
+                });
+
+                it('Every TH key has an EN counterpart', () => {
+                    const missing = Object.keys(I18N.th).filter(k => !(k in I18N.en));
+                    assert(missing.length === 0, `EN missing keys: ${missing.join(', ')}`);
+                });
+
+                it('t() returns EN value when lang=en', () => {
+                    currentLang = 'en';
+                    assertEqual(t('appName'), 'Factory Control');
+                });
+
+                it('t() returns TH value when lang=th', () => {
+                    currentLang = 'th';
+                    assertEqual(t('appName'), 'ระบบควบคุมโรงงาน');
+                    currentLang = 'en'; // reset
+                });
+
+                it('t() falls back to EN for unknown key in TH', () => {
+                    currentLang = 'th';
+                    // If a key only exists in EN, it should still return something
+                    assertEqual(typeof t('appName'), 'string');
+                    currentLang = 'en';
+                });
+
+                it('t() returns key name for completely unknown key', () => {
+                    assertEqual(t('nonexistent_key_xyz'), 'nonexistent_key_xyz');
+                });
+
+                it('setLang() persists to localStorage', () => {
+                    setLang('th');
+                    assertEqual(localStorage.getItem('factory_lang'), 'th');
+                    setLang('en');
+                    assertEqual(localStorage.getItem('factory_lang'), 'en');
+                });
+
+                it('toggleLang() switches between he and th', () => {
+                    currentLang = 'he';
+                    toggleLang();
+                    assertEqual(currentLang, 'th');
+                    toggleLang();
+                    assertEqual(currentLang, 'he');
+                });
+
+                it('Sign-up keys exist in both languages', () => {
+                    const signupKeys = ['signUp', 'signUpTitle', 'signUpSubtitle', 'fullName', 'confirmPassword',
+                        'selectRole', 'alreadyHaveAccount', 'dontHaveAccount',
+                        'signUpError_userExists', 'signUpError_passwordMismatch', 'signUpError_passwordShort',
+                        'signUpError_fillAll', 'signUpSuccess'];
+                    signupKeys.forEach(k => {
+                        assertNotNull(I18N.en[k], `Missing EN signup key: ${k}`);
+                        assertNotNull(I18N.th[k], `Missing TH signup key: ${k}`);
+                    });
                 });
             });
 
-            it('TH: all core keys exist', () => {
-                const coreKeys = ['appName','login','logout','save','cancel','delete','edit','yes','no',
-                    'username','password','loginTitle','loginSubtitle','signUp','signUpTitle',
-                    'fullName','confirmPassword','selectRole','loginError'];
-                coreKeys.forEach(k => {
-                    assertNotNull(I18N.th[k], `Missing TH key: ${k}`);
+            // ---- 2. Auth ----
+            describe('Auth — Login, Signup & Permissions', () => {
+
+                it('Default users are loaded', () => {
+                    cleanState();
+                    const users = getUsers();
+                    assert(users.length >= 4, `Expected >=4 default users, got ${users.length}`);
+                });
+
+                it('authenticate() succeeds with valid manager credentials', () => {
+                    cleanState();
+                    const session = authenticate('manager', 'manager123');
+                    assertNotNull(session, 'Session should not be null');
+                    assertEqual(session.role, 'manager');
+                    assertEqual(session.name, 'Factory Manager');
+                });
+
+                it('authenticate() succeeds with valid worker credentials', () => {
+                    cleanState();
+                    const session = authenticate('worker1', 'worker123');
+                    assertNotNull(session, 'Session should not be null');
+                    assertEqual(session.role, 'worker');
+                });
+
+                it('authenticate() fails with wrong password', () => {
+                    cleanState();
+                    const session = authenticate('manager', 'wrongpass');
+                    assert(session === null, 'Should return null for wrong password');
+                });
+
+                it('authenticate() fails with non-existent user', () => {
+                    cleanState();
+                    const session = authenticate('nobody', 'pass');
+                    assert(session === null, 'Should return null for non-existent user');
+                });
+
+                it('authenticate() stores session in localStorage', () => {
+                    cleanState();
+                    authenticate('manager', 'manager123');
+                    const stored = JSON.parse(localStorage.getItem('factory_session'));
+                    assertNotNull(stored);
+                    assertEqual(stored.username, 'manager');
+                    assert(!stored.password, 'Password should not be stored in session');
+                });
+
+                it('getSession() returns stored session', () => {
+                    cleanState();
+                    authenticate('worker1', 'worker123');
+                    const session = getSession();
+                    assertNotNull(session);
+                    assertEqual(session.username, 'worker1');
+                });
+
+                it('logoutUser() clears session', () => {
+                    cleanState();
+                    authenticate('manager', 'manager123');
+                    logoutUser();
+                    assert(getSession() === null, 'Session should be null after logout');
+                });
+
+                it('registerUser() succeeds with valid data', () => {
+                    cleanState();
+                    const result = registerUser('newuser', 'pass1234', 'pass1234', 'New User', 'worker');
+                    assert(result.success === true, 'Registration should succeed');
+                    // Verify user was added
+                    const users = getUsers();
+                    const found = users.find(u => u.username === 'newuser');
+                    assertNotNull(found, 'New user should exist in users list');
+                    assertEqual(found.role, 'worker');
+                });
+
+                it('registerUser() fails with empty fields', () => {
+                    cleanState();
+                    const result = registerUser('', 'pass', 'pass', 'Name', 'worker');
+                    assert(result.success === false);
+                    assertEqual(result.error, 'signUpError_fillAll');
+                });
+
+                it('registerUser() fails with short password', () => {
+                    cleanState();
+                    const result = registerUser('user2', 'ab', 'ab', 'Name', 'worker');
+                    assert(result.success === false);
+                    assertEqual(result.error, 'signUpError_passwordShort');
+                });
+
+                it('registerUser() fails with mismatched passwords', () => {
+                    cleanState();
+                    const result = registerUser('user3', 'pass1234', 'different', 'Name', 'worker');
+                    assert(result.success === false);
+                    assertEqual(result.error, 'signUpError_passwordMismatch');
+                });
+
+                it('registerUser() fails with duplicate username', () => {
+                    cleanState();
+                    const result = registerUser('manager', 'pass1234', 'pass1234', 'Dup', 'worker');
+                    assert(result.success === false);
+                    assertEqual(result.error, 'signUpError_userExists');
+                });
+
+                it('registerUser() is case-insensitive for duplicate check', () => {
+                    cleanState();
+                    const result = registerUser('MANAGER', 'pass1234', 'pass1234', 'Dup', 'worker');
+                    assert(result.success === false);
+                    assertEqual(result.error, 'signUpError_userExists');
+                });
+
+                it('Newly registered user can authenticate', () => {
+                    cleanState();
+                    registerUser('testlogin', 'mypass', 'mypass', 'Test Login', 'manager');
+                    const session = authenticate('testlogin', 'mypass');
+                    assertNotNull(session);
+                    assertEqual(session.name, 'Test Login');
+                    assertEqual(session.role, 'manager');
+                });
+
+                it('Manager has all permissions', () => {
+                    cleanState();
+                    authenticate('manager', 'manager123');
+                    assert(hasPermission('canViewDashboard'));
+                    assert(hasPermission('canAddRecords'));
+                    assert(hasPermission('canEditRecords'));
+                    assert(hasPermission('canDeleteRecords'));
+                    assert(hasPermission('canExportData'));
+                    assert(hasPermission('canManageUsers'));
+                    assert(hasPermission('canApproveBottling'));
+                });
+
+                it('Worker has limited permissions', () => {
+                    cleanState();
+                    authenticate('worker1', 'worker123');
+                    assert(hasPermission('canViewDashboard'), 'Worker should view dashboard');
+                    assert(hasPermission('canAddRecords'), 'Worker should add records');
+                    assert(!hasPermission('canEditRecords'), 'Worker should NOT edit records');
+                    assert(!hasPermission('canDeleteRecords'), 'Worker should NOT delete records');
+                    assert(!hasPermission('canExportData'), 'Worker should NOT export data');
+                    assert(!hasPermission('canManageUsers'), 'Worker should NOT manage users');
+                });
+
+                it('hasPermission() returns false when logged out', () => {
+                    cleanState();
+                    logoutUser();
+                    assert(!hasPermission('canViewDashboard'));
                 });
             });
 
-            it('EN: all module title keys exist', () => {
-                ['mod_rawMaterials','mod_dateReceiving','mod_fermentation',
-                 'mod_distillation1','mod_distillation2','mod_bottling','mod_inventory'].forEach(k => {
-                    assertNotNull(I18N.en[k], `Missing EN key: ${k}`);
+            // ---- 3. Data Layer ----
+            describe('Data — CRUD Operations', () => {
+
+                it('getData() returns empty array for new store', () => {
+                    cleanState();
+                    const data = getData('factory_test_store');
+                    assert(Array.isArray(data));
+                    assertEqual(data.length, 0);
+                });
+
+                it('addRecord() creates record with id and timestamp', () => {
+                    cleanState();
+                    authenticate('manager', 'manager123');
+                    const record = addRecord('factory_test_store', { name: 'Test', value: 42 });
+                    assertNotNull(record.id, 'Record should have an id');
+                    assertNotNull(record.createdAt, 'Record should have createdAt');
+                    assertEqual(record.createdBy, 'manager');
+                    assertEqual(record.name, 'Test');
+                    assertEqual(record.value, 42);
+                });
+
+                it('addRecord() prepends to array (newest first)', () => {
+                    cleanState();
+                    authenticate('manager', 'manager123');
+                    addRecord('factory_test_order', { seq: 1 });
+                    addRecord('factory_test_order', { seq: 2 });
+                    addRecord('factory_test_order', { seq: 3 });
+                    const data = getData('factory_test_order');
+                    assertEqual(data.length, 3);
+                    assertEqual(data[0].seq, 3, 'Newest should be first');
+                    assertEqual(data[2].seq, 1, 'Oldest should be last');
+                });
+
+                it('updateRecord() modifies existing record', () => {
+                    cleanState();
+                    authenticate('manager', 'manager123');
+                    const rec = addRecord('factory_test_update', { name: 'Original' });
+                    const updated = updateRecord('factory_test_update', rec.id, { name: 'Updated' });
+                    assertNotNull(updated);
+                    assertEqual(updated.name, 'Updated');
+                    assertNotNull(updated.updatedAt);
+                });
+
+                it('updateRecord() returns null for non-existent id', () => {
+                    cleanState();
+                    const result = updateRecord('factory_test_update', 'nonexistent', { name: 'X' });
+                    assert(result === null);
+                });
+
+                it('deleteRecord() removes record', () => {
+                    cleanState();
+                    authenticate('manager', 'manager123');
+                    const rec = addRecord('factory_test_delete', { name: 'ToDelete' });
+                    assertEqual(getData('factory_test_delete').length, 1);
+                    deleteRecord('factory_test_delete', rec.id);
+                    assertEqual(getData('factory_test_delete').length, 0);
+                });
+
+                it('getRecordCount() returns correct count', () => {
+                    cleanState();
+                    authenticate('manager', 'manager123');
+                    assertEqual(getRecordCount('factory_test_count'), 0);
+                    addRecord('factory_test_count', { a: 1 });
+                    addRecord('factory_test_count', { a: 2 });
+                    assertEqual(getRecordCount('factory_test_count'), 2);
+                });
+
+                it('getTodayRecords() filters by today', () => {
+                    cleanState();
+                    authenticate('manager', 'manager123');
+                    addRecord('factory_test_today', { x: 1 }); // today
+                    // Manually add an old record
+                    const data = getData('factory_test_today');
+                    data.push({ id: 'old1', createdAt: '2020-01-01T00:00:00.000Z', x: 2 });
+                    setData('factory_test_today', data);
+                    const todayRecs = getTodayRecords('factory_test_today');
+                    assertEqual(todayRecs.length, 1, 'Should only have 1 today record');
+                });
+
+                it('All STORE_KEYS are defined', () => {
+                    const expected = ['rawMaterials', 'dateReceiving', 'fermentation', 'distillation1', 'distillation2', 'bottling'];
+                    expected.forEach(k => {
+                        assertNotNull(STORE_KEYS[k], `Missing STORE_KEY: ${k}`);
+                    });
                 });
             });
 
-            it('TH: all module title keys exist', () => {
-                ['mod_rawMaterials','mod_dateReceiving','mod_fermentation',
-                 'mod_distillation1','mod_distillation2','mod_bottling','mod_inventory'].forEach(k => {
-                    assertNotNull(I18N.th[k], `Missing TH key: ${k}`);
+            // ---- 4. Dropdown Data ----
+            describe('Data — Dropdown Options & Constants', () => {
+
+                it('SUPPLIERS_RAW has entries', () => {
+                    assert(SUPPLIERS_RAW.length >= 7, `Expected >=7 raw suppliers, got ${SUPPLIERS_RAW.length}`);
+                });
+
+                it('SUPPLIERS_DATES has entries', () => {
+                    assert(SUPPLIERS_DATES.length >= 3, `Expected >=3 date suppliers, got ${SUPPLIERS_DATES.length}`);
+                });
+
+                it('CATEGORIES has 3 entries', () => {
+                    assertEqual(CATEGORIES.length, 3);
+                });
+
+                it('ITEMS_BY_CATEGORY has items for each category', () => {
+                    CATEGORIES.forEach(cat => {
+                        const items = ITEMS_BY_CATEGORY[cat];
+                        assertNotNull(items, `No items for category: ${cat}`);
+                        assert(items.length > 0, `Empty items for category: ${cat}`);
+                    });
+                });
+
+                it('Spices items are bilingual (contain /)', () => {
+                    ITEMS_BY_CATEGORY.rm_cat_spices.forEach(item => {
+                        assertIncludes(item, '/', `Spice item not bilingual: ${item}`);
+                    });
+                });
+
+                it('Labels items are bilingual', () => {
+                    ITEMS_BY_CATEGORY.rm_cat_labels.forEach(item => {
+                        assertIncludes(item, '/', `Label item not bilingual: ${item}`);
+                    });
+                });
+
+                it('Packaging items are bilingual', () => {
+                    ITEMS_BY_CATEGORY.rm_cat_packaging.forEach(item => {
+                        assertIncludes(item, '/', `Packaging item not bilingual: ${item}`);
+                    });
+                });
+
+                it('TANK_SIZES has correct values', () => {
+                    assertEqual(TANK_SIZES.length, 4);
+                    assert(TANK_SIZES.includes(400));
+                    assert(TANK_SIZES.includes(500));
+                    assert(TANK_SIZES.includes(900));
+                    assert(TANK_SIZES.includes(1000));
+                });
+
+                it('DRINK_TYPES has 7 types', () => {
+                    assertEqual(DRINK_TYPES.length, 7);
+                });
+
+                it('D1_TYPES has 5 types', () => {
+                    assertEqual(D1_TYPES.length, 5);
+                });
+
+                it('STILL_NAMES has 2 stills', () => {
+                    assertEqual(STILL_NAMES.length, 2);
+                });
+
+                it('D2_PRODUCT_TYPES has 3 types', () => {
+                    assertEqual(D2_PRODUCT_TYPES.length, 3);
                 });
             });
 
-            it('EN: all nav keys exist', () => {
-                ['nav_dashboard','nav_receiving','nav_production','nav_bottling','nav_inventory'].forEach(k => {
-                    assertNotNull(I18N.en[k], `Missing EN key: ${k}`);
+            // ---- 5. CSV Export ----
+            describe('Data — CSV Export', () => {
+
+                it('exportToCSV() generates valid CSV blob', () => {
+                    cleanState();
+                    authenticate('manager', 'manager123');
+                    addRecord(STORE_KEYS.bottling, {
+                        drinkType: 'drink_arak',
+                        batchNumber: 'A101',
+                        bottleCount: 135,
+                        decision: 'approved',
+                        notes: 'Test note with, comma and "quotes"'
+                    });
+
+                    // Override link.click to capture the blob
+                    let capturedHref = null;
+                    const origCreateElement = document.createElement.bind(document);
+                    document.createElement = function (tag) {
+                        const el = origCreateElement(tag);
+                        if (tag === 'a') {
+                            Object.defineProperty(el, 'click', {
+                                value: function () {
+                                    capturedHref = el.href;
+                                }
+                            });
+                        }
+                        return el;
+                    };
+
+                    exportToCSV(STORE_KEYS.bottling, 'test.csv');
+
+                    document.createElement = origCreateElement; // restore
+
+                    assertNotNull(capturedHref, 'CSV download should have been triggered');
+                    assertIncludes(capturedHref, 'blob:', 'Should be a blob URL');
+                });
+
+                it('exportToCSV() does nothing for empty data', () => {
+                    cleanState();
+                    let clicked = false;
+                    const origCreateElement = document.createElement.bind(document);
+                    document.createElement = function (tag) {
+                        const el = origCreateElement(tag);
+                        if (tag === 'a') {
+                            Object.defineProperty(el, 'click', { value: function () { clicked = true; } });
+                        }
+                        return el;
+                    };
+
+                    exportToCSV('factory_empty_store', 'empty.csv');
+                    document.createElement = origCreateElement;
+
+                    assert(!clicked, 'Should not trigger download for empty data');
                 });
             });
 
-            it('TH: all nav keys exist', () => {
-                ['nav_dashboard','nav_receiving','nav_production','nav_bottling','nav_inventory'].forEach(k => {
-                    assertNotNull(I18N.th[k], `Missing TH key: ${k}`);
+            // ---- 6. Cross-module data flow ----
+            describe('Data — Cross-Module Integration', () => {
+
+                it('Bottling records aggregate into inventory', () => {
+                    cleanState();
+                    authenticate('manager', 'manager123');
+
+                    addRecord(STORE_KEYS.bottling, {
+                        drinkType: 'drink_arak', batchNumber: 'A101',
+                        bottleCount: '100', decision: 'approved'
+                    });
+                    addRecord(STORE_KEYS.bottling, {
+                        drinkType: 'drink_arak', batchNumber: 'A102',
+                        bottleCount: '50', decision: 'approved'
+                    });
+                    addRecord(STORE_KEYS.bottling, {
+                        drinkType: 'drink_gin', batchNumber: 'G1',
+                        bottleCount: '75', decision: 'approved'
+                    });
+                    addRecord(STORE_KEYS.bottling, {
+                        drinkType: 'drink_edv', batchNumber: 'E1',
+                        bottleCount: '30', decision: 'notApproved' // should NOT count
+                    });
+
+                    const bottlingRecords = getData(STORE_KEYS.bottling);
+                    const bottleInv = {};
+                    DRINK_TYPES.forEach(dt => { bottleInv[dt] = 0; });
+                    bottlingRecords.forEach(r => {
+                        if (r.drinkType && r.decision === 'approved') {
+                            bottleInv[r.drinkType] = (bottleInv[r.drinkType] || 0) + (parseInt(r.bottleCount) || 0);
+                        }
+                    });
+
+                    assertEqual(bottleInv['drink_arak'], 150, 'Arak should be 100+50=150');
+                    assertEqual(bottleInv['drink_gin'], 75, 'Gin should be 75');
+                    assertEqual(bottleInv['drink_edv'], 0, 'EDV should be 0 (not approved)');
+                });
+
+                it('Raw material records aggregate into inventory', () => {
+                    cleanState();
+                    authenticate('manager', 'manager123');
+
+                    addRecord(STORE_KEYS.rawMaterials, {
+                        item: 'Anise Seeds / เมล็ดโป๊ยกั๊ก', weight: '5', category: 'rm_cat_spices'
+                    });
+                    addRecord(STORE_KEYS.rawMaterials, {
+                        item: 'Anise Seeds / เมล็ดโป๊ยกั๊ก', weight: '3', category: 'rm_cat_spices'
+                    });
+
+                    const rawRecords = getData(STORE_KEYS.rawMaterials);
+                    const rawInv = {};
+                    rawRecords.forEach(r => {
+                        const key = r.item || 'Unknown';
+                        rawInv[key] = (rawInv[key] || 0) + (parseFloat(r.weight) || 0);
+                    });
+
+                    assertEqual(rawInv['Anise Seeds / เมล็ดโป๊ยกั๊ก'], 8, 'Anise should be 5+3=8');
+                });
+
+                it('Date receiving records sum correctly', () => {
+                    cleanState();
+                    authenticate('manager', 'manager123');
+
+                    addRecord(STORE_KEYS.dateReceiving, { supplier: 'sup_gamliel', weight: '400' });
+                    addRecord(STORE_KEYS.dateReceiving, { supplier: 'sup_lara', weight: '1000' });
+
+                    const dateRecords = getData(STORE_KEYS.dateReceiving);
+                    const total = dateRecords.reduce((sum, r) => sum + (parseFloat(r.weight) || 0), 0);
+                    assertEqual(total, 1400);
                 });
             });
 
-            it('EN: all drink type keys exist', () => {
-                DRINK_TYPES.forEach(k => {
-                    assertNotNull(I18N.en[k], `Missing EN drink key: ${k}`);
+            // ---- 7. Permissions enforcement ----
+            describe('Permissions — Role-Based Access', () => {
+
+                it('PERMISSIONS object has manager and worker roles', () => {
+                    assertNotNull(PERMISSIONS.manager);
+                    assertNotNull(PERMISSIONS.worker);
+                });
+
+                it('Manager has 10 permission keys', () => {
+                    assertEqual(Object.keys(PERMISSIONS.manager).length, 10);
+                });
+
+                it('Worker has 10 permission keys', () => {
+                    assertEqual(Object.keys(PERMISSIONS.worker).length, 10);
+                });
+
+                it('Manager and worker share same permission keys', () => {
+                    const mKeys = Object.keys(PERMISSIONS.manager).sort();
+                    const wKeys = Object.keys(PERMISSIONS.worker).sort();
+                    assertEqual(JSON.stringify(mKeys), JSON.stringify(wKeys));
+                });
+
+                it('Worker cannot edit, delete, export, manage users, or approve', () => {
+                    const restricted = ['canEditRecords', 'canDeleteRecords', 'canExportData', 'canManageUsers', 'canApproveBottling'];
+                    restricted.forEach(p => {
+                        assertEqual(PERMISSIONS.worker[p], false, `Worker should not have ${p}`);
+                    });
+                });
+
+                it('Worker CAN view dashboard, add records, view history, view inventory, view all modules', () => {
+                    const allowed = ['canViewDashboard', 'canAddRecords', 'canViewHistory', 'canViewInventory', 'canViewAllModules'];
+                    allowed.forEach(p => {
+                        assertEqual(PERMISSIONS.worker[p], true, `Worker should have ${p}`);
+                    });
                 });
             });
 
-            it('TH: all drink type keys exist', () => {
-                DRINK_TYPES.forEach(k => {
-                    assertNotNull(I18N.th[k], `Missing TH drink key: ${k}`);
-                });
-            });
+            // ---- 8. Edge cases ----
+            describe('Edge Cases & Robustness', () => {
 
-            it('EN: all supplier keys exist', () => {
-                [...SUPPLIERS_RAW, ...SUPPLIERS_DATES].forEach(k => {
-                    assertNotNull(I18N.en[k], `Missing EN supplier key: ${k}`);
-                });
-            });
-
-            it('TH: all supplier keys exist', () => {
-                [...SUPPLIERS_RAW, ...SUPPLIERS_DATES].forEach(k => {
-                    assertNotNull(I18N.th[k], `Missing TH supplier key: ${k}`);
-                });
-            });
-
-            it('EN: all field label keys for all modules exist', () => {
-                const allFieldKeys = [
-                    'rm_supplier','rm_receiveDate','rm_category','rm_item','rm_weight','rm_expiry',
-                    'rm_tithing','rm_healthCert','rm_kosher',
-                    'dr_supplier','dr_receiveDate','dr_weight','dr_tithing','dr_expiryPeriod',
-                    'fm_date','fm_tankSize','fm_datesKg','fm_quantity','fm_temperature','fm_sugar','fm_ph','fm_sentToDistillation',
-                    'd1_date','d1_type','d1_stillName','d1_fermDate','d1_distQty','d1_initAlcohol','d1_finalAlcohol','d1_temp','d1_timeRange','d1_distilledQty',
-                    'd2_date','d2_productType','d2_d1Dates','d2_batchNumber','d2_initAlcohol','d2_headSep','d2_tailAlcohol','d2_temp','d2_timeRange','d2_quantity',
-                    'bt_drinkType','bt_bottlingDate','bt_batchNumber','bt_barrelNumber','bt_d2Date','bt_alcohol','bt_filtered','bt_color','bt_taste','bt_contaminants','bt_bottleCount','bt_decision','bt_qaSignature',
-                ];
-                allFieldKeys.forEach(k => {
-                    assertNotNull(I18N.en[k], `Missing EN field key: ${k}`);
-                });
-            });
-
-            it('TH: all field label keys for all modules exist', () => {
-                const allFieldKeys = [
-                    'rm_supplier','rm_receiveDate','rm_category','rm_item','rm_weight','rm_expiry',
-                    'rm_tithing','rm_healthCert','rm_kosher',
-                    'dr_supplier','dr_receiveDate','dr_weight','dr_tithing','dr_expiryPeriod',
-                    'fm_date','fm_tankSize','fm_datesKg','fm_quantity','fm_temperature','fm_sugar','fm_ph','fm_sentToDistillation',
-                    'd1_date','d1_type','d1_stillName','d1_fermDate','d1_distQty','d1_initAlcohol','d1_finalAlcohol','d1_temp','d1_timeRange','d1_distilledQty',
-                    'd2_date','d2_productType','d2_d1Dates','d2_batchNumber','d2_initAlcohol','d2_headSep','d2_tailAlcohol','d2_temp','d2_timeRange','d2_quantity',
-                    'bt_drinkType','bt_bottlingDate','bt_batchNumber','bt_barrelNumber','bt_d2Date','bt_alcohol','bt_filtered','bt_color','bt_taste','bt_contaminants','bt_bottleCount','bt_decision','bt_qaSignature',
-                ];
-                allFieldKeys.forEach(k => {
-                    assertNotNull(I18N.th[k], `Missing TH field key: ${k}`);
-                });
-            });
-
-            it('EN and TH have the same number of keys', () => {
-                const enKeys = Object.keys(I18N.en).sort();
-                const thKeys = Object.keys(I18N.th).sort();
-                assertEqual(enKeys.length, thKeys.length, 'Key count mismatch');
-            });
-
-            it('Every EN key has a TH counterpart', () => {
-                const missing = Object.keys(I18N.en).filter(k => !(k in I18N.th));
-                assert(missing.length === 0, `TH missing keys: ${missing.join(', ')}`);
-            });
-
-            it('Every TH key has an EN counterpart', () => {
-                const missing = Object.keys(I18N.th).filter(k => !(k in I18N.en));
-                assert(missing.length === 0, `EN missing keys: ${missing.join(', ')}`);
-            });
-
-            it('t() returns EN value when lang=en', () => {
-                currentLang = 'en';
-                assertEqual(t('appName'), 'Factory Control');
-            });
-
-            it('t() returns TH value when lang=th', () => {
-                currentLang = 'th';
-                assertEqual(t('appName'), 'ระบบควบคุมโรงงาน');
-                currentLang = 'en'; // reset
-            });
-
-            it('t() falls back to EN for unknown key in TH', () => {
-                currentLang = 'th';
-                // If a key only exists in EN, it should still return something
-                assertEqual(typeof t('appName'), 'string');
-                currentLang = 'en';
-            });
-
-            it('t() returns key name for completely unknown key', () => {
-                assertEqual(t('nonexistent_key_xyz'), 'nonexistent_key_xyz');
-            });
-
-            it('setLang() persists to localStorage', () => {
-                setLang('th');
-                assertEqual(localStorage.getItem('factory_lang'), 'th');
-                setLang('en');
-                assertEqual(localStorage.getItem('factory_lang'), 'en');
-            });
-
-            it('toggleLang() switches between en and th', () => {
-                currentLang = 'en';
-                toggleLang();
-                assertEqual(currentLang, 'th');
-                toggleLang();
-                assertEqual(currentLang, 'en');
-            });
-
-            it('Sign-up keys exist in both languages', () => {
-                const signupKeys = ['signUp','signUpTitle','signUpSubtitle','fullName','confirmPassword',
-                    'selectRole','alreadyHaveAccount','dontHaveAccount',
-                    'signUpError_userExists','signUpError_passwordMismatch','signUpError_passwordShort',
-                    'signUpError_fillAll','signUpSuccess'];
-                signupKeys.forEach(k => {
-                    assertNotNull(I18N.en[k], `Missing EN signup key: ${k}`);
-                    assertNotNull(I18N.th[k], `Missing TH signup key: ${k}`);
-                });
-            });
-        });
-
-        // ---- 2. Auth ----
-        describe('Auth — Login, Signup & Permissions', () => {
-
-            it('Default users are loaded', () => {
-                cleanState();
-                const users = getUsers();
-                assert(users.length >= 4, `Expected >=4 default users, got ${users.length}`);
-            });
-
-            it('authenticate() succeeds with valid manager credentials', () => {
-                cleanState();
-                const session = authenticate('manager', 'manager123');
-                assertNotNull(session, 'Session should not be null');
-                assertEqual(session.role, 'manager');
-                assertEqual(session.name, 'Factory Manager');
-            });
-
-            it('authenticate() succeeds with valid worker credentials', () => {
-                cleanState();
-                const session = authenticate('worker1', 'worker123');
-                assertNotNull(session, 'Session should not be null');
-                assertEqual(session.role, 'worker');
-            });
-
-            it('authenticate() fails with wrong password', () => {
-                cleanState();
-                const session = authenticate('manager', 'wrongpass');
-                assert(session === null, 'Should return null for wrong password');
-            });
-
-            it('authenticate() fails with non-existent user', () => {
-                cleanState();
-                const session = authenticate('nobody', 'pass');
-                assert(session === null, 'Should return null for non-existent user');
-            });
-
-            it('authenticate() stores session in localStorage', () => {
-                cleanState();
-                authenticate('manager', 'manager123');
-                const stored = JSON.parse(localStorage.getItem('factory_session'));
-                assertNotNull(stored);
-                assertEqual(stored.username, 'manager');
-                assert(!stored.password, 'Password should not be stored in session');
-            });
-
-            it('getSession() returns stored session', () => {
-                cleanState();
-                authenticate('worker1', 'worker123');
-                const session = getSession();
-                assertNotNull(session);
-                assertEqual(session.username, 'worker1');
-            });
-
-            it('logoutUser() clears session', () => {
-                cleanState();
-                authenticate('manager', 'manager123');
-                logoutUser();
-                assert(getSession() === null, 'Session should be null after logout');
-            });
-
-            it('registerUser() succeeds with valid data', () => {
-                cleanState();
-                const result = registerUser('newuser', 'pass1234', 'pass1234', 'New User', 'worker');
-                assert(result.success === true, 'Registration should succeed');
-                // Verify user was added
-                const users = getUsers();
-                const found = users.find(u => u.username === 'newuser');
-                assertNotNull(found, 'New user should exist in users list');
-                assertEqual(found.role, 'worker');
-            });
-
-            it('registerUser() fails with empty fields', () => {
-                cleanState();
-                const result = registerUser('', 'pass', 'pass', 'Name', 'worker');
-                assert(result.success === false);
-                assertEqual(result.error, 'signUpError_fillAll');
-            });
-
-            it('registerUser() fails with short password', () => {
-                cleanState();
-                const result = registerUser('user2', 'ab', 'ab', 'Name', 'worker');
-                assert(result.success === false);
-                assertEqual(result.error, 'signUpError_passwordShort');
-            });
-
-            it('registerUser() fails with mismatched passwords', () => {
-                cleanState();
-                const result = registerUser('user3', 'pass1234', 'different', 'Name', 'worker');
-                assert(result.success === false);
-                assertEqual(result.error, 'signUpError_passwordMismatch');
-            });
-
-            it('registerUser() fails with duplicate username', () => {
-                cleanState();
-                const result = registerUser('manager', 'pass1234', 'pass1234', 'Dup', 'worker');
-                assert(result.success === false);
-                assertEqual(result.error, 'signUpError_userExists');
-            });
-
-            it('registerUser() is case-insensitive for duplicate check', () => {
-                cleanState();
-                const result = registerUser('MANAGER', 'pass1234', 'pass1234', 'Dup', 'worker');
-                assert(result.success === false);
-                assertEqual(result.error, 'signUpError_userExists');
-            });
-
-            it('Newly registered user can authenticate', () => {
-                cleanState();
-                registerUser('testlogin', 'mypass', 'mypass', 'Test Login', 'manager');
-                const session = authenticate('testlogin', 'mypass');
-                assertNotNull(session);
-                assertEqual(session.name, 'Test Login');
-                assertEqual(session.role, 'manager');
-            });
-
-            it('Manager has all permissions', () => {
-                cleanState();
-                authenticate('manager', 'manager123');
-                assert(hasPermission('canViewDashboard'));
-                assert(hasPermission('canAddRecords'));
-                assert(hasPermission('canEditRecords'));
-                assert(hasPermission('canDeleteRecords'));
-                assert(hasPermission('canExportData'));
-                assert(hasPermission('canManageUsers'));
-                assert(hasPermission('canApproveBottling'));
-            });
-
-            it('Worker has limited permissions', () => {
-                cleanState();
-                authenticate('worker1', 'worker123');
-                assert(hasPermission('canViewDashboard'), 'Worker should view dashboard');
-                assert(hasPermission('canAddRecords'), 'Worker should add records');
-                assert(!hasPermission('canEditRecords'), 'Worker should NOT edit records');
-                assert(!hasPermission('canDeleteRecords'), 'Worker should NOT delete records');
-                assert(!hasPermission('canExportData'), 'Worker should NOT export data');
-                assert(!hasPermission('canManageUsers'), 'Worker should NOT manage users');
-            });
-
-            it('hasPermission() returns false when logged out', () => {
-                cleanState();
-                logoutUser();
-                assert(!hasPermission('canViewDashboard'));
-            });
-        });
-
-        // ---- 3. Data Layer ----
-        describe('Data — CRUD Operations', () => {
-
-            it('getData() returns empty array for new store', () => {
-                cleanState();
-                const data = getData('factory_test_store');
-                assert(Array.isArray(data));
-                assertEqual(data.length, 0);
-            });
-
-            it('addRecord() creates record with id and timestamp', () => {
-                cleanState();
-                authenticate('manager', 'manager123');
-                const record = addRecord('factory_test_store', { name: 'Test', value: 42 });
-                assertNotNull(record.id, 'Record should have an id');
-                assertNotNull(record.createdAt, 'Record should have createdAt');
-                assertEqual(record.createdBy, 'manager');
-                assertEqual(record.name, 'Test');
-                assertEqual(record.value, 42);
-            });
-
-            it('addRecord() prepends to array (newest first)', () => {
-                cleanState();
-                authenticate('manager', 'manager123');
-                addRecord('factory_test_order', { seq: 1 });
-                addRecord('factory_test_order', { seq: 2 });
-                addRecord('factory_test_order', { seq: 3 });
-                const data = getData('factory_test_order');
-                assertEqual(data.length, 3);
-                assertEqual(data[0].seq, 3, 'Newest should be first');
-                assertEqual(data[2].seq, 1, 'Oldest should be last');
-            });
-
-            it('updateRecord() modifies existing record', () => {
-                cleanState();
-                authenticate('manager', 'manager123');
-                const rec = addRecord('factory_test_update', { name: 'Original' });
-                const updated = updateRecord('factory_test_update', rec.id, { name: 'Updated' });
-                assertNotNull(updated);
-                assertEqual(updated.name, 'Updated');
-                assertNotNull(updated.updatedAt);
-            });
-
-            it('updateRecord() returns null for non-existent id', () => {
-                cleanState();
-                const result = updateRecord('factory_test_update', 'nonexistent', { name: 'X' });
-                assert(result === null);
-            });
-
-            it('deleteRecord() removes record', () => {
-                cleanState();
-                authenticate('manager', 'manager123');
-                const rec = addRecord('factory_test_delete', { name: 'ToDelete' });
-                assertEqual(getData('factory_test_delete').length, 1);
-                deleteRecord('factory_test_delete', rec.id);
-                assertEqual(getData('factory_test_delete').length, 0);
-            });
-
-            it('getRecordCount() returns correct count', () => {
-                cleanState();
-                authenticate('manager', 'manager123');
-                assertEqual(getRecordCount('factory_test_count'), 0);
-                addRecord('factory_test_count', { a: 1 });
-                addRecord('factory_test_count', { a: 2 });
-                assertEqual(getRecordCount('factory_test_count'), 2);
-            });
-
-            it('getTodayRecords() filters by today', () => {
-                cleanState();
-                authenticate('manager', 'manager123');
-                addRecord('factory_test_today', { x: 1 }); // today
-                // Manually add an old record
-                const data = getData('factory_test_today');
-                data.push({ id: 'old1', createdAt: '2020-01-01T00:00:00.000Z', x: 2 });
-                setData('factory_test_today', data);
-                const todayRecs = getTodayRecords('factory_test_today');
-                assertEqual(todayRecs.length, 1, 'Should only have 1 today record');
-            });
-
-            it('All STORE_KEYS are defined', () => {
-                const expected = ['rawMaterials','dateReceiving','fermentation','distillation1','distillation2','bottling'];
-                expected.forEach(k => {
-                    assertNotNull(STORE_KEYS[k], `Missing STORE_KEY: ${k}`);
-                });
-            });
-        });
-
-        // ---- 4. Dropdown Data ----
-        describe('Data — Dropdown Options & Constants', () => {
-
-            it('SUPPLIERS_RAW has entries', () => {
-                assert(SUPPLIERS_RAW.length >= 7, `Expected >=7 raw suppliers, got ${SUPPLIERS_RAW.length}`);
-            });
-
-            it('SUPPLIERS_DATES has entries', () => {
-                assert(SUPPLIERS_DATES.length >= 3, `Expected >=3 date suppliers, got ${SUPPLIERS_DATES.length}`);
-            });
-
-            it('CATEGORIES has 3 entries', () => {
-                assertEqual(CATEGORIES.length, 3);
-            });
-
-            it('ITEMS_BY_CATEGORY has items for each category', () => {
-                CATEGORIES.forEach(cat => {
-                    const items = ITEMS_BY_CATEGORY[cat];
-                    assertNotNull(items, `No items for category: ${cat}`);
-                    assert(items.length > 0, `Empty items for category: ${cat}`);
-                });
-            });
-
-            it('Spices items are bilingual (contain /)', () => {
-                ITEMS_BY_CATEGORY.rm_cat_spices.forEach(item => {
-                    assertIncludes(item, '/', `Spice item not bilingual: ${item}`);
-                });
-            });
-
-            it('Labels items are bilingual', () => {
-                ITEMS_BY_CATEGORY.rm_cat_labels.forEach(item => {
-                    assertIncludes(item, '/', `Label item not bilingual: ${item}`);
-                });
-            });
-
-            it('Packaging items are bilingual', () => {
-                ITEMS_BY_CATEGORY.rm_cat_packaging.forEach(item => {
-                    assertIncludes(item, '/', `Packaging item not bilingual: ${item}`);
-                });
-            });
-
-            it('TANK_SIZES has correct values', () => {
-                assertEqual(TANK_SIZES.length, 4);
-                assert(TANK_SIZES.includes(400));
-                assert(TANK_SIZES.includes(500));
-                assert(TANK_SIZES.includes(900));
-                assert(TANK_SIZES.includes(1000));
-            });
-
-            it('DRINK_TYPES has 7 types', () => {
-                assertEqual(DRINK_TYPES.length, 7);
-            });
-
-            it('D1_TYPES has 5 types', () => {
-                assertEqual(D1_TYPES.length, 5);
-            });
-
-            it('STILL_NAMES has 2 stills', () => {
-                assertEqual(STILL_NAMES.length, 2);
-            });
-
-            it('D2_PRODUCT_TYPES has 3 types', () => {
-                assertEqual(D2_PRODUCT_TYPES.length, 3);
-            });
-        });
-
-        // ---- 5. CSV Export ----
-        describe('Data — CSV Export', () => {
-
-            it('exportToCSV() generates valid CSV blob', () => {
-                cleanState();
-                authenticate('manager', 'manager123');
-                addRecord(STORE_KEYS.bottling, {
-                    drinkType: 'drink_arak',
-                    batchNumber: 'A101',
-                    bottleCount: 135,
-                    decision: 'approved',
-                    notes: 'Test note with, comma and "quotes"'
+                it('getData() handles corrupted localStorage gracefully', () => {
+                    localStorage.setItem('factory_corrupt', 'not json');
+                    let threw = false;
+                    try { getData('factory_corrupt'); } catch { threw = true; }
+                    assert(threw, 'Should throw on corrupted data');
+                    localStorage.removeItem('factory_corrupt');
                 });
 
-                // Override link.click to capture the blob
-                let capturedHref = null;
-                const origCreateElement = document.createElement.bind(document);
-                document.createElement = function(tag) {
-                    const el = origCreateElement(tag);
-                    if (tag === 'a') {
-                        Object.defineProperty(el, 'click', { value: function() {
-                            capturedHref = el.href;
-                        }});
+                it('addRecord() generates unique IDs', () => {
+                    cleanState();
+                    authenticate('manager', 'manager123');
+                    const ids = new Set();
+                    for (let i = 0; i < 50; i++) {
+                        const rec = addRecord('factory_test_unique', { i });
+                        assert(!ids.has(rec.id), `Duplicate ID: ${rec.id}`);
+                        ids.add(rec.id);
                     }
-                    return el;
-                };
-
-                exportToCSV(STORE_KEYS.bottling, 'test.csv');
-
-                document.createElement = origCreateElement; // restore
-
-                assertNotNull(capturedHref, 'CSV download should have been triggered');
-                assertIncludes(capturedHref, 'blob:', 'Should be a blob URL');
-            });
-
-            it('exportToCSV() does nothing for empty data', () => {
-                cleanState();
-                let clicked = false;
-                const origCreateElement = document.createElement.bind(document);
-                document.createElement = function(tag) {
-                    const el = origCreateElement(tag);
-                    if (tag === 'a') {
-                        Object.defineProperty(el, 'click', { value: function() { clicked = true; }});
-                    }
-                    return el;
-                };
-
-                exportToCSV('factory_empty_store', 'empty.csv');
-                document.createElement = origCreateElement;
-
-                assert(!clicked, 'Should not trigger download for empty data');
-            });
-        });
-
-        // ---- 6. Cross-module data flow ----
-        describe('Data — Cross-Module Integration', () => {
-
-            it('Bottling records aggregate into inventory', () => {
-                cleanState();
-                authenticate('manager', 'manager123');
-
-                addRecord(STORE_KEYS.bottling, {
-                    drinkType: 'drink_arak', batchNumber: 'A101',
-                    bottleCount: '100', decision: 'approved'
-                });
-                addRecord(STORE_KEYS.bottling, {
-                    drinkType: 'drink_arak', batchNumber: 'A102',
-                    bottleCount: '50', decision: 'approved'
-                });
-                addRecord(STORE_KEYS.bottling, {
-                    drinkType: 'drink_gin', batchNumber: 'G1',
-                    bottleCount: '75', decision: 'approved'
-                });
-                addRecord(STORE_KEYS.bottling, {
-                    drinkType: 'drink_edv', batchNumber: 'E1',
-                    bottleCount: '30', decision: 'notApproved' // should NOT count
                 });
 
-                const bottlingRecords = getData(STORE_KEYS.bottling);
-                const bottleInv = {};
-                DRINK_TYPES.forEach(dt => { bottleInv[dt] = 0; });
-                bottlingRecords.forEach(r => {
-                    if (r.drinkType && r.decision === 'approved') {
-                        bottleInv[r.drinkType] = (bottleInv[r.drinkType] || 0) + (parseInt(r.bottleCount) || 0);
-                    }
+                it('deleteRecord() on non-existent ID does not crash', () => {
+                    cleanState();
+                    authenticate('manager', 'manager123');
+                    addRecord('factory_test_safe_del', { a: 1 });
+                    deleteRecord('factory_test_safe_del', 'nonexistent');
+                    assertEqual(getData('factory_test_safe_del').length, 1, 'Original record should remain');
                 });
 
-                assertEqual(bottleInv['drink_arak'], 150, 'Arak should be 100+50=150');
-                assertEqual(bottleInv['drink_gin'], 75, 'Gin should be 75');
-                assertEqual(bottleInv['drink_edv'], 0, 'EDV should be 0 (not approved)');
-            });
-
-            it('Raw material records aggregate into inventory', () => {
-                cleanState();
-                authenticate('manager', 'manager123');
-
-                addRecord(STORE_KEYS.rawMaterials, {
-                    item: 'Anise Seeds / เมล็ดโป๊ยกั๊ก', weight: '5', category: 'rm_cat_spices'
-                });
-                addRecord(STORE_KEYS.rawMaterials, {
-                    item: 'Anise Seeds / เมล็ดโป๊ยกั๊ก', weight: '3', category: 'rm_cat_spices'
+                it('Multiple language toggles preserve state', () => {
+                    currentLang = 'en';
+                    for (let i = 0; i < 10; i++) toggleLang();
+                    assertEqual(currentLang, 'en', 'After 10 toggles (even), should be back to en');
                 });
 
-                const rawRecords = getData(STORE_KEYS.rawMaterials);
-                const rawInv = {};
-                rawRecords.forEach(r => {
-                    const key = r.item || 'Unknown';
-                    rawInv[key] = (rawInv[key] || 0) + (parseFloat(r.weight) || 0);
-                });
-
-                assertEqual(rawInv['Anise Seeds / เมล็ดโป๊ยกั๊ก'], 8, 'Anise should be 5+3=8');
-            });
-
-            it('Date receiving records sum correctly', () => {
-                cleanState();
-                authenticate('manager', 'manager123');
-
-                addRecord(STORE_KEYS.dateReceiving, { supplier: 'sup_gamliel', weight: '400' });
-                addRecord(STORE_KEYS.dateReceiving, { supplier: 'sup_lara', weight: '1000' });
-
-                const dateRecords = getData(STORE_KEYS.dateReceiving);
-                const total = dateRecords.reduce((sum, r) => sum + (parseFloat(r.weight) || 0), 0);
-                assertEqual(total, 1400);
-            });
-        });
-
-        // ---- 7. Permissions enforcement ----
-        describe('Permissions — Role-Based Access', () => {
-
-            it('PERMISSIONS object has manager and worker roles', () => {
-                assertNotNull(PERMISSIONS.manager);
-                assertNotNull(PERMISSIONS.worker);
-            });
-
-            it('Manager has 10 permission keys', () => {
-                assertEqual(Object.keys(PERMISSIONS.manager).length, 10);
-            });
-
-            it('Worker has 10 permission keys', () => {
-                assertEqual(Object.keys(PERMISSIONS.worker).length, 10);
-            });
-
-            it('Manager and worker share same permission keys', () => {
-                const mKeys = Object.keys(PERMISSIONS.manager).sort();
-                const wKeys = Object.keys(PERMISSIONS.worker).sort();
-                assertEqual(JSON.stringify(mKeys), JSON.stringify(wKeys));
-            });
-
-            it('Worker cannot edit, delete, export, manage users, or approve', () => {
-                const restricted = ['canEditRecords','canDeleteRecords','canExportData','canManageUsers','canApproveBottling'];
-                restricted.forEach(p => {
-                    assertEqual(PERMISSIONS.worker[p], false, `Worker should not have ${p}`);
+                it('registerUser() with empty role fails', () => {
+                    cleanState();
+                    const result = registerUser('user99', 'pass1234', 'pass1234', 'Name', '');
+                    assert(result.success === false);
+                    assertEqual(result.error, 'signUpError_fillAll');
                 });
             });
 
-            it('Worker CAN view dashboard, add records, view history, view inventory, view all modules', () => {
-                const allowed = ['canViewDashboard','canAddRecords','canViewHistory','canViewInventory','canViewAllModules'];
-                allowed.forEach(p => {
-                    assertEqual(PERMISSIONS.worker[p], true, `Worker should have ${p}`);
-                });
-            });
-        });
+            // ---- Render results ----
+            renderResults();
+        }
 
-        // ---- 8. Edge cases ----
-        describe('Edge Cases & Robustness', () => {
+        // ============================================================
+        // Render Results
+        // ============================================================
+        function renderResults() {
+            const total = passed + failed;
 
-            it('getData() handles corrupted localStorage gracefully', () => {
-                localStorage.setItem('factory_corrupt', 'not json');
-                let threw = false;
-                try { getData('factory_corrupt'); } catch { threw = true; }
-                assert(threw, 'Should throw on corrupted data');
-                localStorage.removeItem('factory_corrupt');
-            });
+            document.getElementById('timestamp').textContent =
+                `Run at ${new Date().toLocaleString()} — ${total} tests in ${Object.keys(sections).length} sections`;
 
-            it('addRecord() generates unique IDs', () => {
-                cleanState();
-                authenticate('manager', 'manager123');
-                const ids = new Set();
-                for (let i = 0; i < 50; i++) {
-                    const rec = addRecord('factory_test_unique', { i });
-                    assert(!ids.has(rec.id), `Duplicate ID: ${rec.id}`);
-                    ids.add(rec.id);
-                }
-            });
-
-            it('deleteRecord() on non-existent ID does not crash', () => {
-                cleanState();
-                authenticate('manager', 'manager123');
-                addRecord('factory_test_safe_del', { a: 1 });
-                deleteRecord('factory_test_safe_del', 'nonexistent');
-                assertEqual(getData('factory_test_safe_del').length, 1, 'Original record should remain');
-            });
-
-            it('Multiple language toggles preserve state', () => {
-                currentLang = 'en';
-                for (let i = 0; i < 10; i++) toggleLang();
-                assertEqual(currentLang, 'en', 'After 10 toggles (even), should be back to en');
-            });
-
-            it('registerUser() with empty role fails', () => {
-                cleanState();
-                const result = registerUser('user99', 'pass1234', 'pass1234', 'Name', '');
-                assert(result.success === false);
-                assertEqual(result.error, 'signUpError_fillAll');
-            });
-        });
-
-        // ---- Render results ----
-        renderResults();
-    }
-
-    // ============================================================
-    // Render Results
-    // ============================================================
-    function renderResults() {
-        const total = passed + failed;
-
-        document.getElementById('timestamp').textContent =
-            `Run at ${new Date().toLocaleString()} — ${total} tests in ${Object.keys(sections).length} sections`;
-
-        document.getElementById('summary').innerHTML = `
+            document.getElementById('summary').innerHTML = `
             <div class="summary-card"><div class="num total">${total}</div><div class="label">Total</div></div>
             <div class="summary-card"><div class="num pass">${passed}</div><div class="label">Passed</div></div>
             <div class="summary-card"><div class="num fail">${failed}</div><div class="label">Failed</div></div>
         `;
 
-        let html = '';
-        for (const [section, items] of Object.entries(sections)) {
-            const sectionFailed = items.filter(t => !t.pass).length;
-            const badgeClass = sectionFailed === 0 ? 'pass' : 'fail';
-            const badgeText = sectionFailed === 0 ? `${items.length}/${items.length} PASS` : `${sectionFailed} FAIL`;
+            let html = '';
+            for (const [section, items] of Object.entries(sections)) {
+                const sectionFailed = items.filter(t => !t.pass).length;
+                const badgeClass = sectionFailed === 0 ? 'pass' : 'fail';
+                const badgeText = sectionFailed === 0 ? `${items.length}/${items.length} PASS` : `${sectionFailed} FAIL`;
 
-            html += `<div class="section">`;
-            html += `<div class="section-title">${section} <span class="section-badge ${badgeClass}">${badgeText}</span></div>`;
+                html += `<div class="section">`;
+                html += `<div class="section-title">${section} <span class="section-badge ${badgeClass}">${badgeText}</span></div>`;
 
-            items.forEach(t => {
-                const icon = t.pass ? '&#10003;' : '&#10007;';
-                const cls = t.pass ? 'pass' : 'fail';
-                html += `<div class="test-row">
+                items.forEach(t => {
+                    const icon = t.pass ? '&#10003;' : '&#10007;';
+                    const cls = t.pass ? 'pass' : 'fail';
+                    html += `<div class="test-row">
                     <span class="test-icon ${cls}">${icon}</span>
                     <span class="test-name">${t.name}</span>
                     <span class="test-detail">${t.error || ''}</span>
                 </div>`;
-            });
+                });
 
-            html += `</div>`;
+                html += `</div>`;
+            }
+
+            document.getElementById('results').innerHTML = html;
         }
 
-        document.getElementById('results').innerHTML = html;
-    }
-
-    // Auto-run on load
-    window.addEventListener('load', () => {
-        setTimeout(runAllTests, 300);
-    });
+        // Auto-run on load
+        window.addEventListener('load', () => {
+            setTimeout(runAllTests, 300);
+        });
     </script>
 </body>
+
 </html>

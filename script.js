@@ -67,8 +67,8 @@ function renderApp() {
     renderModuleDetail(content);
   } else if (currentModule && currentView === 'list') {
     renderModuleList(content);
-  } else if (currentScreen === 'settings') {
-    renderSettings(content);
+  } else if (currentScreen === 'backoffice') {
+    renderBackoffice(content);
   } else {
     renderDashboard(content);
   }
@@ -248,7 +248,7 @@ function bindLogin() {
 function renderHeader() {
   const session = getSession();
   const showBack = currentModule !== null;
-  const title = currentModule ? getModuleTitle(currentModule) : t('appName');
+  const title = currentModule ? getModuleTitle(currentModule) : (currentScreen === 'backoffice' ? t('nav_backoffice') : t('appName'));
   const roleClass = session.role === 'worker' ? 'worker' : '';
 
   return `
@@ -292,7 +292,7 @@ function renderBottomNav() {
   ];
 
   if (hasPermission('canManageUsers')) {
-    items.push({ id: 'settings', icon: 'settings', label: 'settings' });
+    items.push({ id: 'backoffice', icon: 'settings', label: 'nav_backoffice' });
   }
 
   return `
@@ -1165,7 +1165,7 @@ function getModuleFields(mod) {
 // BACKOFFICE UI
 // ============================================================
 
-function renderSettings(container) {
+function renderBackoffice(container) {
   if (!hasPermission('canManageUsers')) {
     container.innerHTML = `<div class="perm-overlay"><i data-feather="lock"></i><p>${t('perm_denied')}</p></div>`;
     return;
@@ -1179,32 +1179,28 @@ function renderSettings(container) {
   }
 
   container.innerHTML = `
-    <div class="settings-container">
-      
-      <div class="section-title" style="margin-top: 16px;">${t('dataExport')}</div>
-      <div class="settings-group">
-        <div class="record-item" id="btn-export-all" style="justify-content: center; align-items: center; color: var(--accent);">
-          <i data-feather="download" style="margin-right: 8px;"></i>
-          <span style="font-weight:600">${t('exportAllData')}</span>
-        </div>
-      </div>
+    <div class="section-title">${t('dataExport')}</div>
+    <div class="card" style="margin-bottom: 24px;">
+       <button class="btn btn-primary" id="btn-export-all">
+         <i data-feather="download"></i> ${t('exportAllData')}
+       </button>
+    </div>
 
-      <div class="section-title" style="margin-top:24px">${t('userManagement')}</div>
-      <div class="record-list">
-        ${users.map(u => `
-          <div class="record-item user-item" data-username="${u.username}">
-            <div class="ri-top">
-              <span class="ri-title">${u.username} <small style="color:var(--text-muted)">(${t('role_' + u.role)})</small></span>
-              <span class="ri-badge ${u.status === 'inactive' ? 'not-approved' : 'approved'}">
-                ${u.status === 'inactive' ? t('inactive') : t('active')}
-              </span>
-            </div>
-            <div class="ri-details">
-              ${u.name || '-'} &bull; ${u.nameHe || u.nameTh || '-'}
-            </div>
+    <div class="section-title">${t('userManagement')}</div>
+    <div class="record-list">
+      ${users.map(u => `
+        <div class="record-item user-item" data-username="${u.username}">
+          <div class="ri-top">
+            <span class="ri-title">${u.username} <small style="color:var(--text-muted)">(${t('role_' + u.role)})</small></span>
+            <span class="ri-badge ${u.status === 'inactive' ? 'not-approved' : 'approved'}">
+              ${u.status === 'inactive' ? t('inactive') : t('active')}
+            </span>
           </div>
-        `).join('')}
-      </div>
+          <div class="ri-details">
+            ${u.name || '-'} &bull; ${u.nameHe || u.nameTh || '-'}
+          </div>
+        </div>
+      `).join('')}
     </div>
   `;
 
@@ -1220,7 +1216,7 @@ function renderSettings(container) {
 
   // Bind export
   container.querySelector('#btn-export-all').addEventListener('click', () => {
-    if (confirm('Download all data as CSV?')) {
+    if (confirm(t('confirmExport'))) {
       exportAllData();
     }
   });
