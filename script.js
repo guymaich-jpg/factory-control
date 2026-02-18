@@ -145,6 +145,22 @@ function syncModuleToSheets(module) {
   }).catch(() => {});
 }
 
+// ============================================================
+// THEME
+// ============================================================
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('factory_theme', next);
+  // Update icons without a full re-render
+  const btn = document.querySelector('.theme-btn');
+  if (btn) btn.innerHTML = next === 'dark'
+    ? '<i data-feather="sun" style="width:14px;height:14px"></i>'
+    : '<i data-feather="moon" style="width:14px;height:14px"></i>';
+  if (typeof feather !== 'undefined') feather.replace();
+}
+
 // ---- Manager Password Modal (required for any delete action) ----
 function showManagerPasswordModal(onSuccess) {
   // Remove any existing modal
@@ -425,6 +441,11 @@ function renderHeader() {
       </div>
       <div class="header-right">
         <span class="user-badge"><span class="role-dot ${roleClass}"></span>${getUserDisplayName()}</span>
+        <button class="theme-btn" onclick="toggleTheme()">
+          ${(document.documentElement.getAttribute('data-theme') || 'light') === 'dark'
+            ? '<i data-feather="sun" style="width:14px;height:14px"></i>'
+            : '<i data-feather="moon" style="width:14px;height:14px"></i>'}
+        </button>
         <button class="lang-btn" onclick="toggleLang()">${t('langToggle')}</button>
         <button class="logout-btn" id="logout-btn"><i data-feather="log-out" style="width:14px;height:14px"></i></button>
       </div>
@@ -539,21 +560,17 @@ function renderDashboard(container) {
   container.innerHTML = `
     <div class="welcome-card">
       <h2>${t('welcome')}, ${getUserDisplayName()}</h2>
-      <p>${t('role_' + session.role)} &bull; ${new Date().toLocaleDateString(currentLang === 'th' ? 'th-TH' : currentLang === 'he' ? 'he-IL' : 'en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+      <p>${new Date().toLocaleDateString(currentLang === 'th' ? 'th-TH' : currentLang === 'he' ? 'he-IL' : 'en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
     </div>
 
-    <div class="stats-row">
-      <div class="stat-card">
-        <div class="stat-num">${totalRecords}</div>
-        <div class="stat-label">${t('totalRecords')}</div>
+    <div class="today-strip">
+      <div class="today-chip">
+        <div class="chip-num">${todayTotal}</div>
+        <div class="chip-label">${t('todayActivity')}</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-num">${todayTotal}</div>
-        <div class="stat-label">${t('todayActivity')}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num">7</div>
-        <div class="stat-label">${t('modulesLabel')}</div>
+      <div class="today-chip">
+        <div class="chip-num">${totalRecords}</div>
+        <div class="chip-label">${t('totalRecords')}</div>
       </div>
     </div>
 
