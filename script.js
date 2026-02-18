@@ -41,6 +41,62 @@ function showToast(msg) {
   setTimeout(() => toast.classList.remove('show'), 2500);
 }
 
+// ---- Manager Password Modal (required for any delete action) ----
+function showManagerPasswordModal(onSuccess) {
+  // Remove any existing modal
+  const existing = document.querySelector('.manager-pwd-modal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.className = 'manager-pwd-modal';
+  modal.innerHTML = `
+    <div class="manager-pwd-backdrop"></div>
+    <div class="manager-pwd-dialog">
+      <div class="mpd-title"><i data-feather="lock" style="width:20px;height:20px;margin-inline-end:8px;"></i>${t('deleteConfirmTitle')}</div>
+      <p class="mpd-subtitle">${t('deleteConfirmSubtitle')}</p>
+      <input type="password" class="form-input mpd-input" id="mpd-password" placeholder="${t('managerPasswordPlaceholder')}" autocomplete="current-password">
+      <div class="mpd-error" id="mpd-error"></div>
+      <div class="mpd-actions">
+        <button class="btn btn-secondary mpd-cancel">${t('cancel')}</button>
+        <button class="btn btn-danger mpd-confirm">${t('delete')}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  if (typeof feather !== 'undefined') feather.replace();
+
+  const input = modal.querySelector('#mpd-password');
+  const errorEl = modal.querySelector('#mpd-error');
+  input.focus();
+
+  const close = () => modal.remove();
+
+  modal.querySelector('.mpd-cancel').addEventListener('click', close);
+  modal.querySelector('.manager-pwd-backdrop').addEventListener('click', close);
+
+  const doConfirm = () => {
+    const pwd = input.value;
+    if (!pwd) { errorEl.textContent = t('required'); return; }
+
+    // Verify: must be a manager or admin password
+    const users = getUsers();
+    const authorized = users.find(
+      u => (u.role === 'manager' || u.role === 'admin') && u.password === pwd
+    );
+    if (!authorized) {
+      errorEl.textContent = t('deleteWrongPassword');
+      input.value = '';
+      input.focus();
+      return;
+    }
+    close();
+    onSuccess(authorized);
+  };
+
+  modal.querySelector('.mpd-confirm').addEventListener('click', doConfirm);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') doConfirm(); });
+}
+
 // ---------- Main Render ----------
 function renderApp() {
   const app = $('#app');
@@ -619,13 +675,13 @@ function renderModuleDetail(container) {
   const delBtn = container.querySelector('#delete-record-btn');
   if (delBtn) {
     delBtn.addEventListener('click', () => {
-      if (confirm(t('perm_deleteConfirm'))) {
+      showManagerPasswordModal(() => {
         deleteRecord(STORE_KEYS[currentModule], editingRecord.id);
         editingRecord = null;
         currentView = 'list';
         renderApp();
         showToast(t('delete') + ' ✓');
-      }
+      });
     });
   }
 }
@@ -695,24 +751,67 @@ function renderModuleForm(container) {
     saveCurrentForm();
   });
 
-  // Supplier Add New Logic
-  if (currentModule === 'rawMaterials') {
-    bindSupplierAddNew();
-  }
+  // Bind custom "Add new" option for all selects
+  bindCustomSelects();
 }
 
-function bindSupplierAddNew() {
-  const supSelect = document.querySelector('#field-supplier');
-  const customSupGroup = document.querySelector('#field-supplier_custom')?.parentElement;
-  if (supSelect && customSupGroup) {
-    const updateVisibility = () => {
-      const isNew = supSelect.value === 'ADD_NEW';
-      customSupGroup.style.display = isNew ? '' : 'none';
-    };
-    supSelect.addEventListener('change', updateVisibility);
-    updateVisibility();
-  }
+function bindCustomSelects() {
+  document.querySelectorAll('.custom-select-group').forEach(group => {
+    const fieldKey = group.dataset.fieldKey;
+    const select = group.querySelector('select');
+    const form = group.querySelector('.custom-option-form');
+    if (!select || !form) return;
+
+    let prevValue = select.value;
+
+    select.addEventListener('change', () => {
+      if (select.value === '__ADD_NEW__') {
+        form.style.display = '';
+        const input = form.querySelector('.custom-option-input');
+        if (input) { input.value = ''; input.focus(); }
+        select.value = prevValue; // revert selection visually
+      } else {
+        prevValue = select.value;
+        form.style.display = 'none';
+      }
+    });
+
+    const cancelBtn = form.querySelector('.custom-opt-cancel');
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', () => {
+        form.style.display = 'none';
+        select.value = prevValue;
+      });
+    }
+
+    const confirmBtn = form.querySelector('.custom-opt-confirm');
+    if (confirmBtn) {
+      confirmBtn.addEventListener('click', async () => {
+        const input = form.querySelector('.custom-option-input');
+        const newVal = input ? input.value.trim() : '';
+        if (!newVal) { showToast(t('required')); return; }
+
+        await addCustomOption(fieldKey, newVal);
+
+        // Add option to select and pick it
+        const opt = document.createElement('option');
+        opt.value = newVal;
+        opt.textContent = newVal;
+        // Insert before the __ADD_NEW__ option
+        const addNewOpt = select.querySelector('option[value="__ADD_NEW__"]');
+        if (addNewOpt) select.insertBefore(opt, addNewOpt);
+        else select.appendChild(opt);
+
+        select.value = newVal;
+        prevValue = newVal;
+        form.style.display = 'none';
+        showToast(t('optionAdded'));
+      });
+    }
+  });
 }
+
+// bindSupplierAddNew is replaced by bindCustomSelects() — see below
 
 function renderFormField(f, val) {
   const reqMark = f.required ? '<span class="req">*</span>' : '';
@@ -741,19 +840,34 @@ function renderFormField(f, val) {
         </div>`;
 
 
-    case 'select':
+    case 'select': {
+      const customOpts = getCustomOptions(f.key);
+      const allCustom = customOpts.filter(c => !(f.options || []).some(o => (o.value || o) === c));
+      const skipAddNew = f.noCustom === true;
       return `
-        <div class="form-group">
+        <div class="form-group custom-select-group" data-field-key="${f.key}">
           <label class="form-label">${t(f.labelKey)}${reqMark}</label>
           <select class="form-select" id="field-${f.key}">
             <option value="">${t('selectOne')}</option>
             ${(f.options || []).map(o => {
-        const optVal = o.value || o;
-        const optLabel = o.labelKey ? t(o.labelKey) : (o.label || o);
-        return `<option value="${optVal}" ${val === optVal ? 'selected' : ''}>${optLabel}</option>`;
-      }).join('')}
+              const optVal = o.value || o;
+              const optLabel = o.labelKey ? t(o.labelKey) : (o.label || o);
+              return `<option value="${optVal}" ${val === optVal ? 'selected' : ''}>${optLabel}</option>`;
+            }).join('')}
+            ${allCustom.map(c => `<option value="${c}" ${val === c ? 'selected' : ''}>${c}</option>`).join('')}
+            ${!skipAddNew ? `<option value="__ADD_NEW__">${t('addNewOption')}</option>` : ''}
           </select>
-        </div>`;
+          ${!skipAddNew ? `
+          <div class="custom-option-form" id="custom-form-${f.key}" style="display:none;">
+            <input type="text" class="form-input custom-option-input" id="custom-input-${f.key}" placeholder="${t('newOptionPlaceholder')}">
+            <div class="custom-option-actions">
+              <button class="btn btn-secondary custom-opt-cancel" data-fkey="${f.key}">${t('cancel')}</button>
+              <button class="btn btn-primary custom-opt-confirm" data-fkey="${f.key}">${t('confirm')}</button>
+            </div>
+          </div>
+          ` : ''}
+        </div>`; }
+
 
     case 'cascading-select':
       return `
@@ -890,14 +1004,10 @@ function saveCurrentForm() {
     }
   });
 
-  // Handle Custom Supplier
-  if (currentModule === 'rawMaterials' && record.supplier === 'ADD_NEW') {
-    const customName = document.querySelector('#field-supplier_custom')?.value.trim();
-    if (customName) {
-      addCustomSupplier(customName);
-      record.supplier = customName;
-    } else {
-      showToast(`${t('required')}: ${t('supplierName')}`);
+  // Guard: if any select still has __ADD_NEW__ selected, block save
+  for (const f of fields) {
+    if (f.type === 'select' && record[f.key] === '__ADD_NEW__') {
+      showToast(`${t('required')}: ${t(f.labelKey)}`);
       return;
     }
   }
@@ -978,9 +1088,50 @@ function initSignaturePad() {
 // ============================================================
 // INVENTORY VIEW
 // ============================================================
+
+// Returns records where createdAt is at least 60 seconds old (1-min buffer).
+// Also returns the count of pending (< 1 min) records for the badge.
+function getBufferedRecords(key) {
+  const all = getData(key);
+  const cutoff = Date.now() - 60 * 1000;
+  const visible = all.filter(r => !r.createdAt || new Date(r.createdAt).getTime() <= cutoff);
+  const pending = all.length - visible.length;
+  return { visible, pending };
+}
+
+// Schedule a re-render of inventory after oldest pending record becomes visible.
+let _invRefreshTimer = null;
+function scheduleInventoryRefresh(container) {
+  if (_invRefreshTimer) clearTimeout(_invRefreshTimer);
+  const all = [
+    ...getData(STORE_KEYS.bottling),
+    ...getData(STORE_KEYS.rawMaterials),
+    ...getData(STORE_KEYS.dateReceiving),
+    ...getData(STORE_KEYS.fermentation),
+  ];
+  const cutoff = Date.now() - 60 * 1000;
+  const pending = all.filter(r => r.createdAt && new Date(r.createdAt).getTime() > cutoff);
+  if (pending.length === 0) return;
+
+  // Find the one that will become visible soonest
+  const earliest = Math.min(...pending.map(r => new Date(r.createdAt).getTime()));
+  const delay = earliest + 60 * 1000 - Date.now() + 200; // +200ms margin
+  _invRefreshTimer = setTimeout(() => {
+    if (currentModule === 'inventory') {
+      renderApp();
+    }
+  }, Math.max(delay, 1000));
+}
+
 function renderInventory(container) {
-  // Inventory calculations...
-  const bottlingRecords = getData(STORE_KEYS.bottling);
+  // 1-minute buffer: only count records older than 60s
+  const { visible: bottlingRecords, pending: pendingBottling } = getBufferedRecords(STORE_KEYS.bottling);
+  const { visible: rawRecords, pending: pendingRaw } = getBufferedRecords(STORE_KEYS.rawMaterials);
+  const { visible: dateRecords, pending: pendingDates } = getBufferedRecords(STORE_KEYS.dateReceiving);
+  const { visible: fermRecords, pending: pendingFerm } = getBufferedRecords(STORE_KEYS.fermentation);
+
+  const totalPending = pendingBottling + pendingRaw + pendingDates + pendingFerm;
+
   const bottleInv = {};
   DRINK_TYPES.forEach(dt => { bottleInv[dt] = 0; });
   bottlingRecords.forEach(r => {
@@ -990,7 +1141,6 @@ function renderInventory(container) {
     }
   });
 
-  const rawRecords = getData(STORE_KEYS.rawMaterials);
   const rawInv = {};
   rawRecords.forEach(r => {
     const key = r.item || r.category || 'Unknown';
@@ -998,9 +1148,7 @@ function renderInventory(container) {
     rawInv[key] = (rawInv[key] || 0) + qty;
   });
 
-  const dateRecords = getData(STORE_KEYS.dateReceiving);
   const totalDates = dateRecords.reduce((sum, r) => sum + (parseFloat(r.weight) || 0), 0);
-  const fermRecords = getData(STORE_KEYS.fermentation);
   const activeFerm = fermRecords.filter(r => !r.sentToDistillation).length;
 
   const currentSnapshot = {
@@ -1016,6 +1164,12 @@ function renderInventory(container) {
   const lastVersion = versions[0] || null;
 
   container.innerHTML = `
+    ${totalPending > 0 ? `
+    <div class="inv-pending-banner">
+      <i data-feather="clock" style="width:14px;height:14px;margin-inline-end:6px;"></i>
+      ${t('pendingChanges').replace('{n}', totalPending)}
+    </div>` : ''}
+
     <div class="tab-bar">
       <button class="tab-btn active" data-inv-tab="bottles">${t('mod_bottleInventory')}</button>
       <button class="tab-btn" data-inv-tab="raw">${t('mod_rawInventory')}</button>
@@ -1141,7 +1295,6 @@ function renderInventory(container) {
       const verId = item.dataset.ver;
       const ver = versions.find(v => String(v.version) === verId);
       if (ver) {
-        // Simple alert for gaps or render a detail view
         let gapSummary = Object.entries(ver.gaps)
           .filter(([_, diff]) => diff !== 0)
           .map(([key, diff]) => `${key}: ${diff > 0 ? '+' : ''}${diff}`)
@@ -1150,6 +1303,9 @@ function renderInventory(container) {
       }
     });
   });
+
+  // Schedule auto-refresh when pending records become visible
+  scheduleInventoryRefresh(container);
 }
 
 // ============================================================
@@ -1158,13 +1314,11 @@ function renderInventory(container) {
 function getModuleFields(mod) {
   switch (mod) {
     case 'rawMaterials':
-      const allSuppliers = [...SUPPLIERS_RAW, ...getCustomSuppliers()];
       return [
         {
           key: 'supplier', labelKey: 'rm_supplier', type: 'select', required: true,
-          options: [...allSuppliers.map(s => ({ value: s, labelKey: s })), { value: 'ADD_NEW', labelKey: 'addNewSupplier' }]
+          options: SUPPLIERS_RAW.map(s => ({ value: s, labelKey: s }))
         },
-        { key: 'supplier_custom', labelKey: 'supplierName', type: 'text', hidden: true },
         { key: 'date', labelKey: 'rm_receiveDate', type: 'date', required: true, default: todayStr() },
         {
           key: 'category', labelKey: 'rm_category', type: 'select', required: true,
@@ -1200,7 +1354,7 @@ function getModuleFields(mod) {
       return [
         { key: 'date', labelKey: 'fm_date', type: 'date', required: true, default: todayStr() },
         {
-          key: 'tankSize', labelKey: 'fm_tankSize', type: 'select', required: true,
+          key: 'tankSize', labelKey: 'fm_tankSize', type: 'select', required: true, noCustom: true,
           options: TANK_SIZES.map(s => ({ value: String(s), label: s + ' L' }))
         },
         { key: 'datesKg', labelKey: 'fm_datesKg', type: 'number', required: true, step: '0.1' },
@@ -1261,14 +1415,14 @@ function getModuleFields(mod) {
         { key: 'alcohol', labelKey: 'bt_alcohol', type: 'number', required: true, step: '0.001', min: 0, max: 1 },
         { key: 'filtered', labelKey: 'bt_filtered', type: 'toggle' },
         {
-          key: 'color', labelKey: 'bt_color', type: 'select',
+          key: 'color', labelKey: 'bt_color', type: 'select', noCustom: true,
           options: [
             { value: 'normal', labelKey: 'normal' },
             { value: 'abnormal', labelKey: 'abnormal' },
           ]
         },
         {
-          key: 'taste', labelKey: 'bt_taste', type: 'select',
+          key: 'taste', labelKey: 'bt_taste', type: 'select', noCustom: true,
           options: [
             { value: 'normal', labelKey: 'normal' },
             { value: 'abnormal', labelKey: 'abnormal' },
@@ -1302,50 +1456,50 @@ function renderBackoffice(container) {
   }
 
   container.innerHTML = `
-    <div class="section-title">${t('dataExport')}</div>
-    <div class="card" style="margin-bottom: 24px;">
-       <button class="btn btn-primary" id="btn-export-all">
-         <i data-feather="download"></i> ${t('exportAllData')}
-       </button>
+    <div class="section-title">${t('userManagement')}</div>
+    <p class="backoffice-subtitle">${t('backofficeSubtitle')}</p>
+
+    <div class="permissions-legend">
+      <div class="perm-legend-row">
+        <span class="role-pill role-pill-manager">${t('role_manager')}</span>
+        <span>${t('permManager')}</span>
+      </div>
+      <div class="perm-legend-row">
+        <span class="role-pill role-pill-worker">${t('role_worker')}</span>
+        <span>${t('permWorker')}</span>
+      </div>
     </div>
 
-    <div class="section-title">${t('userManagement')}</div>
-    <div class="record-list">
+    <div class="record-list" style="margin-top:16px;">
       ${users.map(u => `
         <div class="record-item user-item" data-username="${u.username}">
           <div class="ri-top">
-            <span class="ri-title">${u.username} <small style="color:var(--text-muted)">(${t('role_' + u.role)})</small></span>
+            <span class="ri-title">
+              ${u.username}
+              <span class="role-pill role-pill-${u.role}" style="margin-inline-start:6px;">${t('role_' + u.role)}</span>
+            </span>
             <span class="ri-badge ${u.status === 'inactive' ? 'not-approved' : 'approved'}">
               ${u.status === 'inactive' ? t('inactive') : t('active')}
             </span>
           </div>
           <div class="ri-details">
-            ${u.name || '-'}${u.nameHe ? ' &bull; ' + u.nameHe : ''}${u.nameTh ? ' &bull; ' + u.nameTh : ''}
-            <div style="font-size:10px; margin-top:4px;">
-              ${t('lastActivity')}: ${u.lastActivity ? formatDate(u.lastActivity) + ' ' + new Date(u.lastActivity).toLocaleTimeString() : '-'}
+            ${u.nameHe || u.name || '-'}${u.name ? ' &bull; ' + u.name : ''}
+            <div style="font-size:10px; margin-top:4px; color:var(--text-muted);">
+              ${t('lastActivity')}: ${u.lastActivity ? formatDate(u.lastActivity) : '-'}
             </div>
           </div>
         </div>
       `).join('')}
     </div>
-    
-    <div style="margin-top:20px;">
-       <button class="btn btn-secondary" id="btn-invite-user" style="width:100%;">
-         <i data-feather="mail"></i> ${t('emailInvite')}
-       </button>
+
+    <div style="margin-top:20px; display:flex; gap:10px;">
+      <button class="btn btn-secondary" id="btn-export-all" style="flex:1;">
+        <i data-feather="download"></i> ${t('exportAllData')}
+      </button>
     </div>
   `;
 
-  // Bind invite
-  container.querySelector('#btn-invite-user').addEventListener('click', () => {
-    const email = prompt("Enter user email for invitation:");
-    if (email) {
-      alert(`Invitation link generated for ${email}:\nhttps://guymaich-jpg.github.io/factory-control/#invite=${btoa(email)}`);
-      showToast("Invitation sent (simulated)");
-    }
-  });
-
-  // FAB 
+  // FAB
   const fab = el('button', 'fab-add', '<i data-feather="user-plus"></i>');
   fab.id = 'add-user-btn';
   fab.addEventListener('click', () => {
@@ -1356,11 +1510,14 @@ function renderBackoffice(container) {
   container.appendChild(fab);
 
   // Bind export
-  container.querySelector('#btn-export-all').addEventListener('click', () => {
-    if (confirm(t('confirmExport'))) {
-      exportAllData();
-    }
-  });
+  const exportBtn = container.querySelector('#btn-export-all');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', () => {
+      if (confirm(t('confirmExport'))) {
+        exportAllData();
+      }
+    });
+  }
 
   // Bind user items to edit
   container.querySelectorAll('.user-item').forEach(item => {
@@ -1448,26 +1605,24 @@ function renderUserForm(container) {
   });
 
   const deleteBtn = container.querySelector('#bo-delete');
-  if (deleteBtn) {
-    if (isEdit) {
-      deleteBtn.addEventListener('click', () => {
-        if (confirm(t('perm_deleteConfirm'))) {
-          if (u.username === 'admin') {
-            alert("Cannot delete the main admin user");
-            return;
-          }
-          if (u.username === getSession().username) {
-            alert("Cannot delete yourself");
-            return;
-          }
-          deleteUserByUsername(u.username);
-          showToast(t('delete') + ' ✓');
-          currentView = 'list';
-          editingRecord = null;
-          renderApp();
-        }
+  if (deleteBtn && isEdit) {
+    deleteBtn.addEventListener('click', () => {
+      if (u.username === 'admin') {
+        showToast(t('cannotDeleteAdmin'));
+        return;
+      }
+      if (u.username === getSession().username) {
+        showToast(t('cannotDeleteSelf'));
+        return;
+      }
+      showManagerPasswordModal(() => {
+        deleteUserByUsername(u.username);
+        showToast(t('delete') + ' ✓');
+        currentView = 'list';
+        editingRecord = null;
+        renderApp();
       });
-    }
+    });
   }
 
   const saveBtn = container.querySelector('#bo-save');
@@ -1529,5 +1684,6 @@ function renderUserForm(container) {
 // INIT
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
+  if (typeof initFirebase === 'function') initFirebase();
   renderApp();
 });

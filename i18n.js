@@ -249,6 +249,27 @@ const I18N = {
     sup_gamliel: "Gamliel",
     sup_lara: "Lara",
     sup_other: "Other",
+
+    // ---------- Delete modal ----------
+    deleteConfirmTitle: "Manager Authorization Required",
+    deleteConfirmSubtitle: "Enter a manager password to confirm deletion.",
+    managerPasswordPlaceholder: "Manager password",
+    deleteWrongPassword: "Incorrect manager password",
+    cannotDeleteAdmin: "Cannot delete the main admin account",
+    cannotDeleteSelf: "Cannot delete your own account",
+
+    // ---------- Custom options ----------
+    addNewOption: "+ Add new option…",
+    newOptionPlaceholder: "Type new option…",
+    optionAdded: "Option added successfully",
+
+    // ---------- Inventory buffer ----------
+    pendingChanges: "{n} pending update(s) — will appear in < 1 min",
+
+    // ---------- Backoffice ----------
+    backofficeSubtitle: "Manage team members, roles, and access levels.",
+    permManager: "Full access — can view all pages, delete records, and manage users",
+    permWorker: "Limited access — can add records, cannot delete or access management",
   },
 
   he: {
@@ -497,6 +518,27 @@ const I18N = {
     sup_gamliel: "גמליאל",
     sup_lara: "לארה",
     sup_other: "אחר",
+
+    // ---------- Delete modal ----------
+    deleteConfirmTitle: "נדרש אישור מנהל",
+    deleteConfirmSubtitle: "הזן סיסמת מנהל לאישור המחיקה.",
+    managerPasswordPlaceholder: "סיסמת מנהל",
+    deleteWrongPassword: "סיסמת המנהל שגויה",
+    cannotDeleteAdmin: "לא ניתן למחוק את חשבון המנהל הראשי",
+    cannotDeleteSelf: "לא ניתן למחוק את החשבון שלך",
+
+    // ---------- Custom options ----------
+    addNewOption: "+ הוסף אפשרות חדשה…",
+    newOptionPlaceholder: "הקלד אפשרות חדשה…",
+    optionAdded: "האפשרות נוספה בהצלחה",
+
+    // ---------- Inventory buffer ----------
+    pendingChanges: "{n} עדכון/ים בהמתנה — יופיעו בעוד פחות מדקה",
+
+    // ---------- Backoffice ----------
+    backofficeSubtitle: "נהל חברי צוות, תפקידים ורמות גישה.",
+    permManager: "גישה מלאה — יכול לצפות בכל העמודים, למחוק רשומות ולנהל משתמשים",
+    permWorker: "גישה מוגבלת — יכול להוסיף רשומות, לא יכול למחוק או לגשת לניהול",
   },
 
   th: {
@@ -746,6 +788,27 @@ const I18N = {
     sup_gamliel: "Gamliel",
     sup_lara: "Lara",
     sup_other: "อื่นๆ",
+
+    // ---------- Delete modal ----------
+    deleteConfirmTitle: "ต้องการการอนุมัติจากผู้จัดการ",
+    deleteConfirmSubtitle: "กรอกรหัสผ่านของผู้จัดการเพื่อยืนยันการลบ",
+    managerPasswordPlaceholder: "รหัสผ่านผู้จัดการ",
+    deleteWrongPassword: "รหัสผ่านผู้จัดการไม่ถูกต้อง",
+    cannotDeleteAdmin: "ไม่สามารถลบบัญชีผู้ดูแลหลักได้",
+    cannotDeleteSelf: "ไม่สามารถลบบัญชีของตัวเองได้",
+
+    // ---------- Custom options ----------
+    addNewOption: "+ เพิ่มตัวเลือกใหม่…",
+    newOptionPlaceholder: "พิมพ์ตัวเลือกใหม่…",
+    optionAdded: "เพิ่มตัวเลือกสำเร็จ",
+
+    // ---------- Inventory buffer ----------
+    pendingChanges: "{n} รายการรอดำเนินการ — จะปรากฏภายใน 1 นาที",
+
+    // ---------- Backoffice ----------
+    backofficeSubtitle: "จัดการสมาชิกทีม บทบาท และระดับการเข้าถึง",
+    permManager: "การเข้าถึงเต็มรูปแบบ — สามารถดูทุกหน้า ลบบันทึก และจัดการผู้ใช้",
+    permWorker: "การเข้าถึงจำกัด — สามารถเพิ่มบันทึก ไม่สามารถลบหรือเข้าถึงการจัดการ",
   }
 };
 

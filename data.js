@@ -1,5 +1,5 @@
 // ============================================================
-// data.js — LocalStorage Data Layer
+// data.js — Data Layer (Firebase + localStorage fallback)
 // ============================================================
 
 const STORE_KEYS = {
@@ -14,13 +14,19 @@ const STORE_KEYS = {
   users: 'factory_users',
 };
 
+// ---- localStorage helpers ----
 function getData(key) {
-  return JSON.parse(localStorage.getItem(key) || '[]');
+  try {
+    return JSON.parse(localStorage.getItem(key) || '[]');
+  } catch (e) {
+    console.warn('[data] Corrupted localStorage key:', key);
+    localStorage.removeItem(key);
+    return [];
+  }
 }
 
 function setData(key, data) {
   localStorage.setItem(key, JSON.stringify(data));
-  // Update last activity for current user
   const session = JSON.parse(localStorage.getItem('factory_session') || 'null');
   if (session && session.username) {
     updateUserLastActivity(session.username);
@@ -36,24 +42,98 @@ function updateUserLastActivity(username) {
   }
 }
 
+// ---- CRUD (localStorage, synced to Firebase when available) ----
+function addRecord(key, record) {
+  const data = getData(key);
+  record.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  record.createdAt = new Date().toISOString();
+  record.createdBy = getSession()?.username || 'unknown';
+  data.unshift(record);
+  setData(key, data);
+
+  // Async sync to Firebase (fire-and-forget)
+  if (typeof fbAdd === 'function') {
+    fbAdd(key, record).catch(() => {});
+  }
+
+  return record;
+}
+
+function updateRecord(key, id, updates) {
+  const data = getData(key);
+  const idx = data.findIndex(r => r.id === id);
+  if (idx !== -1) {
+    data[idx] = { ...data[idx], ...updates, updatedAt: new Date().toISOString() };
+    setData(key, data);
+
+    if (typeof fbUpdate === 'function') {
+      fbUpdate(key, id, updates).catch(() => {});
+    }
+
+    return data[idx];
+  }
+  return null;
+}
+
+function deleteRecord(key, id) {
+  const data = getData(key);
+  const filtered = data.filter(r => r.id !== id);
+  setData(key, filtered);
+
+  if (typeof fbDelete === 'function') {
+    fbDelete(key, id).catch(() => {});
+  }
+}
+
+function getRecordCount(key) {
+  return getData(key).length;
+}
+
+function getTodayRecords(key) {
+  const today = new Date().toISOString().slice(0, 10);
+  return getData(key).filter(r => r.createdAt && r.createdAt.startsWith(today));
+}
+
+// ---- Custom Dropdown Options ----
+// Store custom options per field key
+function getCustomOptions(fieldKey) {
+  return JSON.parse(localStorage.getItem('factory_customOptions_' + fieldKey) || '[]');
+}
+
+async function addCustomOption(fieldKey, value) {
+  value = value.trim();
+  if (!value) return;
+  const opts = getCustomOptions(fieldKey);
+  if (!opts.includes(value)) {
+    opts.push(value);
+    localStorage.setItem('factory_customOptions_' + fieldKey, JSON.stringify(opts));
+  }
+  // Sync to Firebase
+  if (typeof fbAddCustomOption === 'function') {
+    await fbAddCustomOption(fieldKey, value).catch(() => {});
+  }
+  return value;
+}
+
+// Legacy: keep getCustomSuppliers for backward compat
 function getCustomSuppliers() {
-  return getData(STORE_KEYS.customSuppliers);
+  return getCustomOptions('supplier');
 }
 
 function addCustomSupplier(name) {
-  const suppliers = getCustomSuppliers();
+  const suppliers = getCustomOptions('supplier');
   if (!suppliers.includes(name)) {
     suppliers.push(name);
-    setData(STORE_KEYS.customSuppliers, suppliers);
+    localStorage.setItem('factory_customOptions_supplier', JSON.stringify(suppliers));
   }
   return name;
 }
 
+// ---- Inventory Versioning ----
 function saveInventoryVersion(snapshot) {
   const versions = getData(STORE_KEYS.inventoryVersions);
   const prevVersion = versions.length > 0 ? versions[0] : null;
 
-  // Calculate gaps vs previous version
   const gaps = {};
   if (prevVersion) {
     Object.keys(snapshot.items).forEach(key => {
@@ -74,46 +154,15 @@ function saveInventoryVersion(snapshot) {
 
   versions.unshift(record);
   setData(STORE_KEYS.inventoryVersions, versions);
-  return record;
-}
 
-function addRecord(key, record) {
-  const data = getData(key);
-  record.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-  record.createdAt = new Date().toISOString();
-  record.createdBy = getSession()?.username || 'unknown';
-  data.unshift(record);
-  setData(key, data);
-  return record;
-}
-
-function updateRecord(key, id, updates) {
-  const data = getData(key);
-  const idx = data.findIndex(r => r.id === id);
-  if (idx !== -1) {
-    data[idx] = { ...data[idx], ...updates, updatedAt: new Date().toISOString() };
-    setData(key, data);
-    return data[idx];
+  if (typeof fbAdd === 'function') {
+    fbAdd(STORE_KEYS.inventoryVersions, record).catch(() => {});
   }
-  return null;
+
+  return record;
 }
 
-function deleteRecord(key, id) {
-  const data = getData(key);
-  const filtered = data.filter(r => r.id !== id);
-  setData(key, filtered);
-}
-
-function getRecordCount(key) {
-  return getData(key).length;
-}
-
-function getTodayRecords(key) {
-  const today = new Date().toISOString().slice(0, 10);
-  return getData(key).filter(r => r.createdAt && r.createdAt.startsWith(today));
-}
-
-// ---------- Dropdown option data ----------
+// ---- Dropdown data ----
 const SUPPLIERS_RAW = [
   'sup_tamartushka', 'sup_nichuchot', 'sup_iherb',
   'sup_shlr', 'sup_pcsi', 'sup_yakev', 'sup_selfHarvest', 'sup_other'
@@ -194,12 +243,11 @@ const STILL_NAMES = ['d1_still_amiti', 'd1_still_aladdin'];
 
 const D2_PRODUCT_TYPES = ['drink_edv', 'drink_arak', 'drink_gin'];
 
-// ---------- CSV Export ----------
+// ---- CSV Export ----
 function exportToCSV(keyOrData, filename) {
   let data = Array.isArray(keyOrData) ? keyOrData : getData(keyOrData);
   if (data.length === 0) return;
 
-  // Flatten objects for CSV
   const headers = Object.keys(data[0]);
   const sanitizeCSV = (val) => {
     if (val === undefined || val === null) return '""';
@@ -210,9 +258,9 @@ function exportToCSV(keyOrData, filename) {
     return '"' + s + '"';
   };
 
-  const rowStrings = data.map(row => {
-    return headers.map(h => sanitizeCSV(row[h])).join(',');
-  });
+  const rowStrings = data.map(row =>
+    headers.map(h => sanitizeCSV(row[h])).join(',')
+  );
 
   const csvContent = headers.join(',') + '\n' + rowStrings.join('\n');
   const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -221,25 +269,17 @@ function exportToCSV(keyOrData, filename) {
   link.href = url;
   link.setAttribute('download', filename || 'export.csv');
   link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
 function exportAllData() {
   const keys = [
-    'factory_rawMaterials',
-    'factory_dateReceiving',
-    'factory_fermentation',
-    'factory_distillation1',
-    'factory_distillation2',
-    'factory_bottling',
-    'factory_inventoryVersions',
-    'factory_customSuppliers',
-    'factory_users'
+    'factory_rawMaterials', 'factory_dateReceiving', 'factory_fermentation',
+    'factory_distillation1', 'factory_distillation2', 'factory_bottling',
+    'factory_inventoryVersions', 'factory_customSuppliers', 'factory_users'
   ];
-
   const today = new Date().toISOString().slice(0, 10);
-
   keys.forEach(key => {
-    // Only verify data exists before export
     if (localStorage.getItem(key)) {
       exportToCSV(key, key + '_' + today + '.csv');
     }
