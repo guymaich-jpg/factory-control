@@ -825,6 +825,11 @@ html[dir="rtl"] .toggle-switch input:checked+.toggle-slider::before {
   color: var(--danger);
 }
 
+.ri-badge.pending {
+  background: rgba(251, 191, 36, 0.15);
+  color: #f59e0b;
+}
+
 /* ============================================================
    INVENTORY DASHBOARD
    ============================================================ */

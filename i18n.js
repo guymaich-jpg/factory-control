@@ -107,7 +107,7 @@ const I18N = {
     mod_fermentation: "Fermentation",
     mod_distillation1: "Distillation 1",
     mod_distillation2: "Distillation 2",
-    mod_bottling: "Bottling QA",
+    mod_bottling: "Bottling",
     mod_inventory: "Inventory",
     mod_bottleInventory: "Bottle Inventory",
     mod_rawInventory: "Raw Material Inventory",
@@ -146,8 +146,7 @@ const I18N = {
     // ---------- Fermentation ----------
     fm_date: "Date",
     fm_tankSize: "Tank Size (L)",
-    fm_datesKg: "Dates Added (kg)",
-    fm_quantity: "Quantity (L)",
+    fm_datesCrates: "Number of Crates (1 crate = 20 kg)",
     fm_temperature: "Temperature (°C)",
     fm_sugar: "Sugar Content",
     fm_ph: "pH",
@@ -199,6 +198,8 @@ const I18N = {
     bt_bottleCount: "Bottle Count",
     bt_decision: "Decision",
     bt_qaSignature: "QA Signature",
+    bt_pendingApproval: "Pending Approval",
+    bt_approve: "Approve",
 
     // ---------- Drink Types ----------
     drink_arak: "Arak",
@@ -219,7 +220,8 @@ const I18N = {
     inv_bottles: "Bottles & Corks",
     inv_labels: "Labels",
     inv_spices: "Spices",
-    inv_dates: "Dates",
+    inv_dates: "Dates Available (kg)",
+    inv_datesUsed: "Dates in Fermentation (kg)",
     inv_cartons: "Cartons",
 
     // ---------- Permissions ----------
@@ -382,7 +384,7 @@ const I18N = {
     mod_fermentation: "תסיסה",
     mod_distillation1: "זיקוק 1",
     mod_distillation2: "זיקוק 2",
-    mod_bottling: "בקרת איכות ביקבוק",
+    mod_bottling: "ביקבוק",
     mod_inventory: "מלאי",
     mod_bottleInventory: "מלאי בקבוקים",
     mod_rawInventory: "מלאי חומרי גלם",
@@ -415,8 +417,7 @@ const I18N = {
     // ---------- Fermentation ----------
     fm_date: "תאריך",
     fm_tankSize: "גודל מיכל (ליטר)",
-    fm_datesKg: "תמרים שנוספו (ק\"ג)",
-    fm_quantity: "כמות (ליטר)",
+    fm_datesCrates: "מספר ארגזים (1 ארגז = 20 ק\"ג)",
     fm_temperature: "טמפרטורה (°C)",
     fm_sugar: "תכולת סוכר",
     fm_ph: "pH",
@@ -468,12 +469,14 @@ const I18N = {
     bt_bottleCount: "מספר בקבוקים",
     bt_decision: "החלטה",
     bt_qaSignature: "חתימת בקרת איכות",
+    bt_pendingApproval: "ממתין לאישור",
+    bt_approve: "אשר",
 
     // ---------- Drink Types ----------
     drink_arak: "ערק",
     drink_gin: "ג'ין",
     drink_edv: "EDV",
-    drink_licorice: "שומר",
+    drink_licorice: "ליקוריץ",
     drink_brandyVS: "ברנדי VS",
     drink_brandyVSOP: "ברנדי VSOP",
     drink_brandyMed: "ברנדי ים תיכוני",
@@ -488,7 +491,8 @@ const I18N = {
     inv_bottles: "בקבוקים ופקקים",
     inv_labels: "תוויות",
     inv_spices: "תבלינים",
-    inv_dates: "תמרים",
+    inv_dates: "תמרים זמינים (ק\"ג)",
+    inv_datesUsed: "תמרים בתסיסה (ק\"ג)",
     inv_cartons: "קרטונים",
 
     // ---------- Permissions ----------
@@ -646,7 +650,7 @@ const I18N = {
     mod_fermentation: "การหมัก",
     mod_distillation1: "การกลั่นครั้งที่ 1",
     mod_distillation2: "การกลั่นครั้งที่ 2",
-    mod_bottling: "QA การบรรจุขวด",
+    mod_bottling: "การบรรจุขวด",
     mod_inventory: "คลังสินค้า",
     mod_bottleInventory: "คลังขวด",
     mod_rawInventory: "คลังวัตถุดิบ",
@@ -685,8 +689,7 @@ const I18N = {
     // ---------- Fermentation ----------
     fm_date: "วันที่",
     fm_tankSize: "ขนาดถัง (ลิตร)",
-    fm_datesKg: "อินทผลัมที่เพิ่ม (กก.)",
-    fm_quantity: "จำนวน (ลิตร)",
+    fm_datesCrates: "จำนวนลัง (1 ลัง = 20 กก.)",
     fm_temperature: "อุณหภูมิ (°C)",
     fm_sugar: "ปริมาณน้ำตาล",
     fm_ph: "pH",
@@ -738,6 +741,8 @@ const I18N = {
     bt_bottleCount: "จำนวนขวด",
     bt_decision: "การตัดสินใจ",
     bt_qaSignature: "ลายเซ็น QA",
+    bt_pendingApproval: "รอการอนุมัติ",
+    bt_approve: "อนุมัติ",
 
     // ---------- Drink Types ----------
     drink_arak: "Arak",
@@ -758,7 +763,8 @@ const I18N = {
     inv_bottles: "ขวดและจุก",
     inv_labels: "ฉลาก",
     inv_spices: "เครื่องเทศ",
-    inv_dates: "อินทผลัม",
+    inv_dates: "อินทผลัมที่มี (กก.)",
+    inv_datesUsed: "อินทผลัมในการหมัก (กก.)",
     inv_cartons: "กล่อง",
 
     // ---------- Permissions ----------

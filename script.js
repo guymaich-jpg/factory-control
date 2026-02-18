@@ -567,6 +567,17 @@ function renderModuleList(container) {
     });
   }
 
+  // Bind approve buttons (bottling quick-approve for admin)
+  container.querySelectorAll('.approve-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (records.find(r => r.id === btn.dataset.id)) {
+        updateRecord(storeKey, btn.dataset.id, { decision: 'approved' });
+        renderApp();
+      }
+    });
+  });
+
   // Bind record items
   container.querySelectorAll('.record-item').forEach(item => {
     item.addEventListener('click', () => {
@@ -591,10 +602,12 @@ function renderRecordItem(r) {
       title = r.supplier || '-';
       details = `${r.weight || '-'} kg`;
       break;
-    case 'fermentation':
+    case 'fermentation': {
+      const crates = r.datesCrates !== undefined ? r.datesCrates : Math.round((parseFloat(r.datesKg) || 0) / 20);
       title = `${r.tankSize || '-'}L ${t('fm_tankSize')}`;
-      details = `${r.datesKg || '-'} kg &bull; ${r.quantity || '-'} L`;
+      details = `${crates} ${t('fm_datesCrates').split('(')[0].trim()}`;
       break;
+    }
     case 'distillation1':
       title = r.type ? t(r.type) : '-';
       details = `${t('d1_stillName')}: ${r.stillName ? t(r.stillName) : '-'} &bull; ${r.distilledQty || '-'} L`;
@@ -610,7 +623,7 @@ function renderRecordItem(r) {
         ? `<span class="ri-badge approved">${t('approved')}</span>`
         : r.decision === 'notApproved'
           ? `<span class="ri-badge not-approved">${t('notApproved')}</span>`
-          : '';
+          : `<span class="ri-badge pending">${t('bt_pendingApproval')}</span>${hasPermission('canApproveBottling') ? `<button class="approve-btn" data-id="${r.id}" style="margin-inline-start:6px;padding:2px 10px;font-size:11px;background:#22c55e;color:#fff;border:none;border-radius:6px;cursor:pointer;">${t('bt_approve')}</button>` : ''}`;
       break;
   }
 
@@ -962,13 +975,14 @@ function bindCascadingDropdowns() {
     });
   });
 
-  // Auto-calculate dates kg from tank size (fermentation)
+  // Auto-calculate number of crates from tank size (fermentation)
+  // Formula: tank_size * 0.28 kg of dates / 20 kg per crate
   const tankSelect = document.querySelector('#field-tankSize');
-  const datesKgInput = document.querySelector('#field-datesKg');
-  if (tankSelect && datesKgInput) {
+  const datesCratesInput = document.querySelector('#field-datesCrates');
+  if (tankSelect && datesCratesInput) {
     tankSelect.addEventListener('change', () => {
       const size = parseFloat(tankSelect.value) || 0;
-      datesKgInput.value = (size * 0.28).toFixed(0);
+      datesCratesInput.value = Math.round(size * 0.28 / 20).toString();
     });
   }
 }
@@ -1148,14 +1162,24 @@ function renderInventory(container) {
     rawInv[key] = (rawInv[key] || 0) + qty;
   });
 
-  const totalDates = dateRecords.reduce((sum, r) => sum + (parseFloat(r.weight) || 0), 0);
+  const totalDatesReceived = dateRecords.reduce((sum, r) => sum + (parseFloat(r.weight) || 0), 0);
+  // Support both new records (datesCrates) and legacy records (datesKg stored as kg)
+  const totalDatesInFerm = fermRecords.reduce((sum, r) => {
+    if (r.datesCrates !== undefined && r.datesCrates !== '') {
+      return sum + (parseFloat(r.datesCrates) || 0) * 20;
+    }
+    return sum + (parseFloat(r.datesKg) || 0);
+  }, 0);
+  const availableDates = Math.max(0, totalDatesReceived - totalDatesInFerm);
   const activeFerm = fermRecords.filter(r => !r.sentToDistillation).length;
 
   const currentSnapshot = {
     items: {
       ...bottleInv,
       ...rawInv,
-      totalDates,
+      totalDatesReceived,
+      totalDatesInFerm,
+      availableDates,
       activeFerm
     }
   };
@@ -1178,14 +1202,19 @@ function renderInventory(container) {
 
     <div id="inv-bottles">
       <div class="inv-section">
-        <div class="stats-row" style="grid-template-columns:1fr 1fr;margin-bottom:16px;">
+        <div class="stats-row" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:16px;">
           <div class="stat-card">
-            <div class="stat-num">${totalDates.toFixed(0)}</div>
-            <div class="stat-label">${t('inv_dates')} (kg)</div>
+            <div class="stat-num" style="color:var(--success)">${availableDates.toFixed(0)}</div>
+            <div class="stat-label">${t('inv_dates')}</div>
+            <div style="font-size:10px;opacity:0.6;margin-top:2px;">+${totalDatesReceived.toFixed(0)} / -${totalDatesInFerm.toFixed(0)}</div>
           </div>
           <div class="stat-card">
             <div class="stat-num">${activeFerm}</div>
             <div class="stat-label">${t('mod_fermentation')}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num" style="color:var(--warning,#f59e0b)">${totalDatesInFerm.toFixed(0)}</div>
+            <div class="stat-label">${t('inv_datesUsed')}</div>
           </div>
         </div>
 
@@ -1357,8 +1386,7 @@ function getModuleFields(mod) {
           key: 'tankSize', labelKey: 'fm_tankSize', type: 'select', required: true, noCustom: true,
           options: TANK_SIZES.map(s => ({ value: String(s), label: s + ' L' }))
         },
-        { key: 'datesKg', labelKey: 'fm_datesKg', type: 'number', required: true, step: '0.1' },
-        { key: 'quantity', labelKey: 'fm_quantity', type: 'number', step: '0.1' },
+        { key: 'datesCrates', labelKey: 'fm_datesCrates', type: 'number', required: true, step: '1', min: '0' },
         { key: 'temperature', labelKey: 'fm_temperature', type: 'number', step: '0.1' },
         { key: 'sugar', labelKey: 'fm_sugar', type: 'number', step: '0.1' },
         { key: 'ph', labelKey: 'fm_ph', type: 'number', step: '0.01', min: 0, max: 14 },
@@ -1430,7 +1458,9 @@ function getModuleFields(mod) {
         },
         { key: 'contaminants', labelKey: 'bt_contaminants', type: 'toggle' },
         { key: 'bottleCount', labelKey: 'bt_bottleCount', type: 'number', required: true, min: 0 },
-        { key: 'decision', labelKey: 'bt_decision', type: 'decision', required: true },
+        ...(hasPermission('canApproveBottling') ? [
+          { key: 'decision', labelKey: 'bt_decision', type: 'decision', required: true },
+        ] : []),
       ];
 
     default:

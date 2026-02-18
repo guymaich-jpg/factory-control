@@ -35,7 +35,7 @@ const PERMISSIONS = {
     canExportData: true,
     canManageUsers: true,
     canViewInventory: true,
-    canApproveBottling: true,
+    canApproveBottling: false,
     canViewAllModules: true,
     canAccessBackoffice: true,
   },
