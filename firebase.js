@@ -31,21 +31,39 @@ function isFirebaseReady() {
 }
 
 // ============================================================
-// Initialization
+// Initialization — loads Firebase SDK on-demand (no extra KB when disabled)
 // ============================================================
 function initFirebase() {
-  if (!FIREBASE_ENABLED) return;
-  try {
-    if (!firebase.apps.length) {
-      firebase.initializeApp(FIREBASE_CONFIG);
-    }
-    _db = firebase.firestore();
-    _firebaseReady = true;
-    console.log('[Firebase] Firestore connected');
-  } catch (e) {
-    console.warn('[Firebase] Init failed, using localStorage fallback:', e.message);
-    _firebaseReady = false;
+  if (!FIREBASE_ENABLED) return; // SDK never loaded, zero cost
+
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
   }
+
+  const BASE = 'https://www.gstatic.com/firebasejs/9.23.0';
+  Promise.all([
+    loadScript(BASE + '/firebase-app-compat.js'),
+    loadScript(BASE + '/firebase-firestore-compat.js'),
+  ]).then(() => {
+    try {
+      if (!firebase.apps.length) {
+        firebase.initializeApp(FIREBASE_CONFIG);
+      }
+      _db = firebase.firestore();
+      _firebaseReady = true;
+      console.log('[Firebase] Firestore connected');
+    } catch (e) {
+      console.warn('[Firebase] Init failed, using localStorage fallback:', e.message);
+    }
+  }).catch(e => {
+    console.warn('[Firebase] SDK load failed, using localStorage fallback:', e.message);
+  });
 }
 
 // ============================================================
