@@ -55,8 +55,14 @@ const PERMISSIONS = {
 };
 
 function getUsers() {
-  let users = JSON.parse(localStorage.getItem('factory_users') || 'null');
-  if (!users) {
+  let users;
+  try {
+    users = JSON.parse(localStorage.getItem('factory_users') || 'null');
+  } catch (e) {
+    // Corrupted data — reset to defaults
+    users = null;
+  }
+  if (!users || !Array.isArray(users)) {
     users = DEFAULT_USERS;
     localStorage.setItem('factory_users', JSON.stringify(users));
   } else {
@@ -119,8 +125,33 @@ function registerUser(username, password, confirmPassword, fullName, role) {
   return { success: true };
 }
 
+// Session expires after 12 hours of inactivity
+const SESSION_TIMEOUT_MS = 12 * 60 * 60 * 1000;
+
 function getSession() {
-  return JSON.parse(localStorage.getItem('factory_session') || 'null');
+  let session;
+  try {
+    session = JSON.parse(localStorage.getItem('factory_session') || 'null');
+  } catch (e) {
+    localStorage.removeItem('factory_session');
+    return null;
+  }
+  if (!session) return null;
+
+  // Check for session expiry
+  const now = Date.now();
+  if (session.loginTime && (now - session.loginTime) > SESSION_TIMEOUT_MS) {
+    localStorage.removeItem('factory_session');
+    return null;
+  }
+
+  // Validate session has required fields
+  if (!session.username || !session.role) {
+    localStorage.removeItem('factory_session');
+    return null;
+  }
+
+  return session;
 }
 
 function logout() {

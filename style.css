@@ -1200,3 +1200,177 @@ html[dir="rtl"] .toggle-switch input:checked+.toggle-slider::before {
   font-size: 11px;
   line-height: 1.4;
 }
+/* ============================================================
+   MANAGER PASSWORD MODAL
+   ============================================================ */
+.manager-pwd-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.manager-pwd-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+}
+
+.manager-pwd-dialog {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 4px);
+  padding: 28px 24px;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  animation: fadeIn 0.2s ease;
+}
+
+.mpd-title {
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.mpd-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+
+.mpd-input {
+  margin-bottom: 8px;
+}
+
+.mpd-error {
+  min-height: 18px;
+  font-size: 12px;
+  color: #e53e3e;
+  margin-bottom: 12px;
+}
+
+.mpd-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+/* ============================================================
+   CUSTOM SELECT OPTION FORM
+   ============================================================ */
+.custom-option-form {
+  margin-top: 8px;
+  padding: 12px;
+  background: var(--bg);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  animation: fadeIn 0.15s ease;
+}
+
+.custom-option-input {
+  margin-bottom: 8px;
+}
+
+.custom-option-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* ============================================================
+   INVENTORY PENDING BANNER
+   ============================================================ */
+.inv-pending-banner {
+  display: flex;
+  align-items: center;
+  background: #fffbeb;
+  border: 1px solid #f6e05e;
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #744210;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+[data-theme="dark"] .inv-pending-banner {
+  background: #2d2a00;
+  border-color: #b7791f;
+  color: #f6e05e;
+}
+
+/* ============================================================
+   BACKOFFICE - ROLE PILLS & PERMISSIONS LEGEND
+   ============================================================ */
+.role-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.role-pill-manager {
+  background: #ebf8ff;
+  color: #2b6cb0;
+  border: 1px solid #bee3f8;
+}
+
+.role-pill-worker {
+  background: #f0fff4;
+  color: #276749;
+  border: 1px solid #c6f6d5;
+}
+
+.role-pill-admin {
+  background: #faf5ff;
+  color: #6b46c1;
+  border: 1px solid #e9d8fd;
+}
+
+[data-theme="dark"] .role-pill-manager { background: #1a365d; color: #90cdf4; border-color: #2b6cb0; }
+[data-theme="dark"] .role-pill-worker  { background: #1c4532; color: #9ae6b4; border-color: #276749; }
+[data-theme="dark"] .role-pill-admin   { background: #322659; color: #d6bcfa; border-color: #6b46c1; }
+
+.backoffice-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.permissions-legend {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.perm-legend-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.perm-legend-row .role-pill {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
