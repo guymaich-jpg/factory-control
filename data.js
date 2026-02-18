@@ -201,12 +201,17 @@ function exportToCSV(keyOrData, filename) {
 
   // Flatten objects for CSV
   const headers = Object.keys(data[0]);
+  const sanitizeCSV = (val) => {
+    if (val === undefined || val === null) return '""';
+    let s = typeof val === 'object' ? JSON.stringify(val) : String(val);
+    s = s.replace(/"/g, '""');
+    // Prevent CSV formula injection
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+    return '"' + s + '"';
+  };
+
   const rowStrings = data.map(row => {
-    return headers.map(h => {
-      let val = row[h];
-      if (typeof val === 'object' && val !== null) val = JSON.stringify(val);
-      return '"' + (val === undefined || val === null ? '' : String(val).replace(/"/g, '""')) + '"';
-    }).join(',');
+    return headers.map(h => sanitizeCSV(row[h])).join(',');
   });
 
   const csvContent = headers.join(',') + '\n' + rowStrings.join('\n');
@@ -226,7 +231,8 @@ function exportAllData() {
     'factory_distillation1',
     'factory_distillation2',
     'factory_bottling',
-    'factory_inventory',
+    'factory_inventoryVersions',
+    'factory_customSuppliers',
     'factory_users'
   ];
 

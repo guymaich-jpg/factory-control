@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="he" dir="rtl">
 
 <head>
     <meta charset="UTF-8">
@@ -8,7 +8,15 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#F5F5F7">
     <link rel="manifest" href="manifest.json">
-    <title>Factory Control</title>
+    <title>בקרת מפעל | Factory Control</title>
+    <script>
+      // Apply stored language/direction before first paint to avoid flash
+      (function() {
+        var lang = localStorage.getItem('factory_lang') || 'he';
+        document.documentElement.lang = lang;
+        document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr';
+      })();
+    </script>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link

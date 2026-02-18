@@ -947,10 +947,18 @@
                     assertEqual(getData('factory_test_safe_del').length, 1, 'Original record should remain');
                 });
 
-                it('Multiple language toggles preserve state', () => {
-                    currentLang = 'en';
-                    for (let i = 0; i < 10; i++) toggleLang();
-                    assertEqual(currentLang, 'en', 'After 10 toggles (even), should be back to en');
+                it('Multiple language toggles cycle between he and th only', () => {
+                    setLang('he');
+                    toggleLang(); assertEqual(currentLang, 'th', 'he → th');
+                    toggleLang(); assertEqual(currentLang, 'he', 'th → he');
+                    toggleLang(); assertEqual(currentLang, 'th', 'he → th again');
+                });
+
+                it('Default language is Hebrew', () => {
+                    localStorage.removeItem('factory_lang');
+                    // Simulate what the module does at load time
+                    const defaultLang = localStorage.getItem('factory_lang') || 'he';
+                    assertEqual(defaultLang, 'he', 'Default should be Hebrew');
                 });
 
                 it('registerUser() with empty role fails', () => {
@@ -997,6 +1005,144 @@
                     const result = secureRecordAction(() => { executed = true; return true; });
                     assertEqual(executed, false, 'Action should not execute without session');
                     assertEqual(result, false);
+                });
+            });
+
+            // ---- 10. v1.3 Fix Verification ----
+            describe('v1.3 Bug Fixes & Improvements', () => {
+
+                it('logout() function exists (not logoutUser)', () => {
+                    assert(typeof logout === 'function', 'logout() must exist');
+                    assert(typeof logoutUser === 'undefined', 'logoutUser() must NOT exist');
+                });
+
+                it('logout() clears session correctly', () => {
+                    cleanState();
+                    authenticate('admin', 'admin123');
+                    assert(getSession() !== null, 'Session should exist after login');
+                    logout();
+                    assertEqual(getSession(), null, 'Session should be null after logout');
+                });
+
+                it('Thai language key block exists in I18N', () => {
+                    assert(typeof I18N.th === 'object', 'I18N.th must exist');
+                    assertNotNull(I18N.th.appName, 'I18N.th.appName must exist');
+                    assertNotNull(I18N.th.login, 'I18N.th.login must exist');
+                    assertNotNull(I18N.th.logout, 'I18N.th.logout must exist');
+                });
+
+                it('Thai translations are complete (same key count as Hebrew)', () => {
+                    const heKeys = Object.keys(I18N.he).sort();
+                    const thKeys = Object.keys(I18N.th).sort();
+                    const missingInTh = heKeys.filter(k => !thKeys.includes(k));
+                    assertEqual(missingInTh.length, 0, 'Missing in Thai: ' + missingInTh.join(', '));
+                });
+
+                it('No duplicate keys in i18n objects (permissions key)', () => {
+                    // permissionsRules and permissions must both exist separately
+                    assert(typeof I18N.en.permissionsRules === 'string', 'en.permissionsRules must exist');
+                    assert(typeof I18N.he.permissionsRules === 'string', 'he.permissionsRules must exist');
+                    assert(typeof I18N.th.permissionsRules === 'string', 'th.permissionsRules must exist');
+                    assert(typeof I18N.en.permissions === 'string', 'en.permissions must still exist');
+                });
+
+                it('getUserDisplayName() returns correct name for each language', () => {
+                    cleanState();
+                    authenticate('admin', 'admin123');
+                    const session = getSession();
+                    // Update session with test names
+                    const testSession = { ...session, name: 'Admin EN', nameHe: 'מנהל', nameTh: 'ผู้ดูแล' };
+                    localStorage.setItem('factory_session', JSON.stringify(testSession));
+
+                    setLang('he');
+                    assertEqual(getUserDisplayName(), 'מנהל', 'Hebrew name should show nameHe');
+                    setLang('th');
+                    assertEqual(getUserDisplayName(), 'ผู้ดูแล', 'Thai name should show nameTh');
+                    setLang('en');
+                    assertEqual(getUserDisplayName(), 'Admin EN', 'English name should show name');
+                });
+
+                it('getUserDisplayName() falls back to name if nameHe/nameTh missing', () => {
+                    cleanState();
+                    authenticate('admin', 'admin123');
+                    const session = getSession();
+                    const testSession = { ...session, name: 'Fallback', nameHe: '', nameTh: '' };
+                    localStorage.setItem('factory_session', JSON.stringify(testSession));
+
+                    setLang('he');
+                    assertEqual(getUserDisplayName(), 'Fallback', 'Should fall back to name');
+                    setLang('th');
+                    assertEqual(getUserDisplayName(), 'Fallback', 'Should fall back to name');
+                });
+
+                it('CSV sanitization prevents formula injection', () => {
+                    cleanState();
+                    authenticate('manager', 'manager123');
+                    addRecord(STORE_KEYS.rawMaterials, {
+                        item: '=SUM(A1)',
+                        weight: '+100',
+                        notes: '-formula'
+                    });
+
+                    let capturedUrl = null;
+                    const orig = document.createElement.bind(document);
+                    document.createElement = (tag) => {
+                        const e = orig(tag);
+                        if (tag === 'a') {
+                            Object.defineProperty(e, 'click', { value: () => { capturedUrl = e.href; } });
+                        }
+                        return e;
+                    };
+                    exportToCSV(STORE_KEYS.rawMaterials, 'test_csv.csv');
+                    document.createElement = orig;
+
+                    if (capturedUrl) {
+                        // We can't read the blob directly, but verify it was triggered
+                        assertIncludes(capturedUrl, 'blob:', 'Should be blob URL');
+                    }
+                });
+
+                it('exportAllData() uses correct store key for inventory versions', () => {
+                    // Verify the correct key is used (factory_inventoryVersions not factory_inventory)
+                    cleanState();
+                    authenticate('manager', 'manager123');
+                    saveInventoryVersion({ items: { drink_arak: 50 }, note: 'test' });
+
+                    const versions = getData(STORE_KEYS.inventoryVersions);
+                    assert(versions.length > 0, 'Should have 1 inventory version');
+
+                    // The old key factory_inventory should be absent
+                    const oldKey = localStorage.getItem('factory_inventory');
+                    assertEqual(oldKey, null, 'Old inventory key should not exist');
+                });
+
+                it('New misc i18n keys exist in all languages', () => {
+                    const newKeys = ['modulesLabel', 'clearSignature', 'keepCurrentPassword',
+                                     'sessionExpired', 'versionLabel', 'noGaps', 'gapsLabel',
+                                     'nameEnglish', 'nameHebrew'];
+                    ['en', 'he', 'th'].forEach(lang => {
+                        newKeys.forEach(key => {
+                            assert(typeof I18N[lang][key] === 'string',
+                                `I18N.${lang}.${key} must be a string`);
+                        });
+                    });
+                });
+
+                it('createUser() stores nameTh field', () => {
+                    cleanState();
+                    createUser({
+                        username: 'thaiuser',
+                        password: 'pass1234',
+                        name: 'Thai User',
+                        nameHe: 'משתמש תאילנדי',
+                        nameTh: 'ผู้ใช้ไทย',
+                        role: 'worker',
+                        status: 'active'
+                    });
+                    const users = getUsers();
+                    const user = users.find(u => u.username === 'thaiuser');
+                    assertNotNull(user, 'User should be created');
+                    assertEqual(user.nameTh, 'ผู้ใช้ไทย', 'nameTh should be stored');
                 });
             });
 

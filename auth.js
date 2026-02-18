@@ -137,7 +137,7 @@ function logout() {
 function secureRecordAction(action) {
   const session = getSession();
   if (!session) {
-    alert("Session expired. Please log in.");
+    alert(typeof t === 'function' ? t('sessionExpired') : 'Session expired. Please log in.');
     logout();
     return false;
   }
@@ -152,7 +152,9 @@ function hasPermission(perm) {
 function getUserDisplayName() {
   const session = getSession();
   if (!session) return '';
-  return currentLang === 'he' ? (session.nameHe || session.name) : session.name;
+  if (currentLang === 'he') return session.nameHe || session.name;
+  if (currentLang === 'th') return session.nameTh || session.name;
+  return session.name;
 }
 
 function getUserRole() {

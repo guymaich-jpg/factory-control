@@ -4,9 +4,17 @@
   "description": "Alcohol Production Documentation App - Bilingual (Hebrew/Thai) mobile-first web application for distillery production tracking",
   "main": "index.html",
   "scripts": {
+    "dev": "python3 -m http.server 8080",
     "start": "python3 -m http.server 8080",
-    "test": "open tests.html",
-    "test:compat": "open tests/compatibility.html"
+    "test:browser": "python3 -m http.server 8099 & sleep 1 && xdg-open http://localhost:8099/tests.html 2>/dev/null || open http://localhost:8099/tests.html 2>/dev/null || echo 'Open http://localhost:8099/tests.html in your browser'",
+    "test:e2e": "npx playwright test",
+    "test:e2e:ui": "npx playwright test --ui",
+    "test:e2e:headed": "npx playwright test --headed",
+    "release:staging": "bash scripts/release-staging.sh",
+    "release:prod": "bash scripts/release-prod.sh"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2"
   },
   "keywords": [
     "distillery",
@@ -20,6 +28,6 @@
   "license": "UNLICENSED",
   "repository": {
     "type": "git",
-    "url": "https://github.com/YOUR_USERNAME/factory-control.git"
+    "url": "https://github.com/guymaich-jpg/factory-control.git"
   }
 }

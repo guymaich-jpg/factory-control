@@ -73,7 +73,7 @@ const I18N = {
     addNewSupplier: "Add New Supplier…",
     supplierName: "Supplier Name",
     emailInvite: "Send Email Invitation",
-    permissions: "Permissions & Rules",
+    permissionsRules: "Permissions & Rules",
 
     // ---------- Backoffice ----------
     backoffice: "Backoffice",
@@ -227,6 +227,17 @@ const I18N = {
     perm_managerOnly: "Manager access only",
     perm_deleteConfirm: "Are you sure you want to delete this record?",
 
+    // ---------- Misc UI ----------
+    modulesLabel: "Modules",
+    clearSignature: "Clear",
+    keepCurrentPassword: "Leave blank to keep current",
+    sessionExpired: "Session expired. Please log in.",
+    versionLabel: "Version",
+    noGaps: "No gaps",
+    gapsLabel: "Gaps",
+    nameEnglish: "Full Name (English/Thai)",
+    nameHebrew: "Full Name (Hebrew)",
+
     // ---------- Suppliers ----------
     sup_tamartushka: "Tamartushka",
     sup_nichuchot: "Nichuchot Argaman",
@@ -311,7 +322,7 @@ const I18N = {
     addNewSupplier: "הוסף ספק חדש…",
     supplierName: "שם הספק",
     emailInvite: "שלח הזמנה בדוא\"ל",
-    permissions: "הרשאות וכללים",
+    permissionsRules: "הרשאות וכללים",
 
     // ---------- Backoffice ----------
     settings: "הגדרות",
@@ -464,6 +475,17 @@ const I18N = {
     perm_managerOnly: "גישה למנהלים בלבד",
     perm_deleteConfirm: "האם אתה בטוח שברצונך למחוק רשומה זו?",
 
+    // ---------- Misc UI ----------
+    modulesLabel: "מודולים",
+    clearSignature: "נקה",
+    keepCurrentPassword: "השאר ריק לשמירת הסיסמה הנוכחית",
+    sessionExpired: "פג תוקף ההתחברות. אנא התחבר מחדש.",
+    versionLabel: "גרסה",
+    noGaps: "אין פערים",
+    gapsLabel: "פערים",
+    nameEnglish: "שם מלא (אנגלית/תאילנדית)",
+    nameHebrew: "שם מלא (עברית)",
+
     // ---------- Suppliers ----------
     sup_tamartushka: "תמרטושקה",
     sup_nichuchot: "ניצוצות ארגמן",
@@ -548,7 +570,7 @@ const I18N = {
     addNewSupplier: "เพิ่มผู้จำหน่ายใหม่…",
     supplierName: "ชื่อผู้จำหน่าย",
     emailInvite: "ส่งคำเชิญทางอีเมล",
-    permissions: "สิทธิ์และกฎการใช้งาน",
+    permissionsRules: "สิทธิ์และกฎการใช้งาน",
 
     // ---------- Backoffice ----------
     backoffice: "หลังบ้าน",
@@ -702,6 +724,17 @@ const I18N = {
     perm_managerOnly: "เข้าถึงได้เฉพาะผู้จัดการ",
     perm_deleteConfirm: "คุณแน่ใจหรือไม่ว่าต้องการลบบันทึกนี้?",
 
+    // ---------- Misc UI ----------
+    modulesLabel: "โมดูล",
+    clearSignature: "ล้าง",
+    keepCurrentPassword: "ปล่อยว่างเพื่อเก็บรหัสผ่านเดิม",
+    sessionExpired: "เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่",
+    versionLabel: "เวอร์ชัน",
+    noGaps: "ไม่มีส่วนต่าง",
+    gapsLabel: "ส่วนต่าง",
+    nameEnglish: "ชื่อ-นามสกุล (อังกฤษ/ไทย)",
+    nameHebrew: "ชื่อ-นามสกุล (ภาษาฮีบรู)",
+
     // ---------- Suppliers ----------
     sup_tamartushka: "Tamartushka",
     sup_nichuchot: "Nichuchot Argaman",
@@ -716,7 +749,7 @@ const I18N = {
   }
 };
 
-let currentLang = localStorage.getItem('factory_lang') || 'en';
+let currentLang = localStorage.getItem('factory_lang') || 'he';
 
 function t(key) {
   return (I18N[currentLang] && I18N[currentLang][key]) || (I18N.en[key]) || key;

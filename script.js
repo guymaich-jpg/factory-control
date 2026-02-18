@@ -26,7 +26,7 @@ function todayStr() { return new Date().toISOString().slice(0, 10); }
 
 function formatDate(d) {
   if (!d) return '-';
-  try { return new Date(d).toLocaleDateString(currentLang === 'th' ? 'th-TH' : 'en-GB'); }
+  try { return new Date(d).toLocaleDateString(currentLang === 'th' ? 'th-TH' : currentLang === 'he' ? 'he-IL' : 'en-GB'); }
   catch { return d; }
 }
 
@@ -267,7 +267,7 @@ function renderHeader() {
         <span class="header-title">${title}</span>
       </div>
       <div class="header-right">
-        <span class="user-badge"><span class="role-dot ${roleClass}"></span>${session.name}</span>
+        <span class="user-badge"><span class="role-dot ${roleClass}"></span>${getUserDisplayName()}</span>
         <button class="lang-btn" onclick="toggleLang()">${t('langToggle')}</button>
         <button class="logout-btn" id="logout-btn"><i data-feather="log-out" style="width:14px;height:14px"></i></button>
       </div>
@@ -329,7 +329,6 @@ function bindNav() {
       else if (nav === 'receiving') { currentModule = 'rawMaterials'; }
       else if (nav === 'production') { currentModule = 'fermentation'; }
       else if (nav === 'bottling') { currentModule = 'bottling'; }
-      else if (nav === 'bottling') { currentModule = 'bottling'; }
       else if (nav === 'inventory') { currentModule = 'inventory'; }
       else if (nav === 'settings') { currentModule = null; }
 
@@ -356,7 +355,7 @@ function bindNav() {
   const logoutBtn = $('#logout-btn');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
-      logoutUser();
+      logout();
       renderApp();
     });
   }
@@ -383,7 +382,7 @@ function renderDashboard(container) {
   container.innerHTML = `
     <div class="welcome-card">
       <h2>${t('welcome')}, ${getUserDisplayName()}</h2>
-      <p>${t('role_' + session.role)} &bull; ${new Date().toLocaleDateString(currentLang === 'th' ? 'th-TH' : 'en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+      <p>${t('role_' + session.role)} &bull; ${new Date().toLocaleDateString(currentLang === 'th' ? 'th-TH' : currentLang === 'he' ? 'he-IL' : 'en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
     </div>
 
     <div class="stats-row">
@@ -397,7 +396,7 @@ function renderDashboard(container) {
       </div>
       <div class="stat-card">
         <div class="stat-num">7</div>
-        <div class="stat-label">Modules</div>
+        <div class="stat-label">${t('modulesLabel')}</div>
       </div>
     </div>
 
@@ -661,7 +660,7 @@ function renderModuleForm(container) {
         <label class="form-label">${t('bt_qaSignature')}</label>
         <div class="sig-pad-wrapper">
           <canvas id="sig-canvas"></canvas>
-          <button class="sig-clear" id="sig-clear">Clear</button>
+          <button class="sig-clear" id="sig-clear">${t('clearSignature')}</button>
         </div>
       </div>
     `;
@@ -864,6 +863,19 @@ function saveCurrentForm() {
   const fields = getModuleFields(currentModule);
   const record = {};
 
+  // Validate required fields
+  const missing = [];
+  fields.forEach(f => {
+    if (!f.required) return;
+    const el = document.querySelector(`#field-${f.key}`);
+    const val = el ? (el.type === 'checkbox' ? null : el.value) : null;
+    if (!val || val.trim() === '') missing.push(t(f.labelKey));
+  });
+  if (missing.length > 0) {
+    showToast(`${t('required')}: ${missing.join(', ')}`);
+    return;
+  }
+
   fields.forEach(f => {
     if (f.type === 'toggle') {
       const el = document.querySelector(`#field-${f.key}`);
@@ -884,6 +896,9 @@ function saveCurrentForm() {
     if (customName) {
       addCustomSupplier(customName);
       record.supplier = customName;
+    } else {
+      showToast(`${t('required')}: ${t('supplierName')}`);
+      return;
     }
   }
 
@@ -893,6 +908,14 @@ function saveCurrentForm() {
 
   // Signature
   if (currentModule === 'bottling' && signatureCanvas) {
+    // Detect blank canvas by checking if any non-transparent pixel exists
+    const ctx = signatureCanvas.getContext('2d');
+    const pixelData = ctx.getImageData(0, 0, signatureCanvas.width, signatureCanvas.height).data;
+    const isSigned = pixelData.some((v, i) => i % 4 === 3 && v > 0);
+    if (!isSigned) {
+      showToast(`${t('required')}: ${t('bt_qaSignature')}`);
+      return;
+    }
     record.signature = signatureCanvas.toDataURL();
   }
 
@@ -1045,12 +1068,12 @@ function renderInventory(container) {
 
     <div id="inv-versions" style="display:none;">
       <div class="inv-section">
-        ${versions.length === 0 ? `<div class="empty-state"><i data-feather="clock"></i><p>${t('noRecords')}</p></div>` : `
+        ${versions.length === 0 ? `<div class="empty-state"><i data-feather="clock"></i><p>${t('noData')}</p></div>` : `
           <div class="record-list">
             ${versions.map(v => `
               <div class="record-item inv-ver-item" data-ver="${v.version}">
                 <div class="ri-top">
-                  <span class="ri-title">Version ${v.version}</span>
+                  <span class="ri-title">${t('versionLabel')} ${v.version}</span>
                   <span class="ri-date">${formatDate(v.createdAt)}</span>
                 </div>
                 <div class="ri-details">
@@ -1123,7 +1146,7 @@ function renderInventory(container) {
           .filter(([_, diff]) => diff !== 0)
           .map(([key, diff]) => `${key}: ${diff > 0 ? '+' : ''}${diff}`)
           .join('\n');
-        alert(`Version ${ver.version} Gaps:\n${gapSummary || 'No gaps'}`);
+        alert(`${t('versionLabel')} ${ver.version} ${t('gapsLabel')}:\n${gapSummary || t('noGaps')}`);
       }
     });
   });
@@ -1297,7 +1320,7 @@ function renderBackoffice(container) {
             </span>
           </div>
           <div class="ri-details">
-            ${u.name || '-'} &bull; ${u.nameHe || u.nameTh || '-'}
+            ${u.name || '-'}${u.nameHe ? ' &bull; ' + u.nameHe : ''}${u.nameTh ? ' &bull; ' + u.nameTh : ''}
             <div style="font-size:10px; margin-top:4px;">
               ${t('lastActivity')}: ${u.lastActivity ? formatDate(u.lastActivity) + ' ' + new Date(u.lastActivity).toLocaleTimeString() : '-'}
             </div>
@@ -1371,18 +1394,23 @@ function renderUserForm(container) {
       ` : `
       <div class="form-group">
         <label class="form-label">${t('password')} <small>(${t('optional')})</small></label>
-        <input type="password" class="form-input" id="bo-password" placeholder="Leave blank to keep current">
+        <input type="password" class="form-input" id="bo-password" placeholder="${t('keepCurrentPassword')}">
       </div>
       `}
       
       <div class="form-group">
-        <label class="form-label">${t('fullName')} (English) <span class="req">*</span></label>
+        <label class="form-label">${t('nameEnglish')} <span class="req">*</span></label>
         <input type="text" class="form-input" id="bo-name" value="${u.name || ''}">
       </div>
-      
+
       <div class="form-group">
-        <label class="form-label">${t('fullName')} (Hebrew)</label>
-        <input type="text" class="form-input" id="bo-nameHe" value="${u.nameHe || u.nameTh || ''}" dir="rtl">
+        <label class="form-label">${t('nameHebrew')}</label>
+        <input type="text" class="form-input" id="bo-nameHe" value="${u.nameHe || ''}" dir="rtl">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">${t('fullName')} (Thai)</label>
+        <input type="text" class="form-input" id="bo-nameTh" value="${u.nameTh || ''}">
       </div>
 
       <div class="form-group">
@@ -1451,6 +1479,7 @@ function renderUserForm(container) {
     const passwordInput = container.querySelector('#bo-password');
     const nameInput = container.querySelector('#bo-name');
     const nameHeInput = container.querySelector('#bo-nameHe');
+    const nameThInput = container.querySelector('#bo-nameTh');
     const roleInput = container.querySelector('#bo-role');
     const statusInput = container.querySelector('#bo-status');
 
@@ -1458,6 +1487,7 @@ function renderUserForm(container) {
     const password = passwordInput ? passwordInput.value : '';
     const name = nameInput ? nameInput.value.trim() : '';
     const nameHe = nameHeInput ? nameHeInput.value.trim() : '';
+    const nameTh = nameThInput ? nameThInput.value.trim() : '';
     const role = roleInput ? roleInput.value : '';
     const status = statusInput ? statusInput.value : 'active';
 
@@ -1468,7 +1498,7 @@ function renderUserForm(container) {
 
     if (isEdit) {
       // Update
-      const updates = { name, nameHe, role, status };
+      const updates = { name, nameHe, nameTh, role, status };
       if (password) updates.password = password;
 
       const res = updateUser(username, updates);
@@ -1482,7 +1512,7 @@ function renderUserForm(container) {
       }
     } else {
       // Create
-      const res = createUser({ username, password, name, nameHe, role, status });
+      const res = createUser({ username, password, name, nameHe, nameTh, role, status });
       if (res.success) {
         showToast(t('signUpSuccess'));
         currentView = 'list';
