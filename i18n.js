@@ -97,6 +97,7 @@ const I18N = {
     nav_dashboard: "Dashboard",
     nav_receiving: "Receiving",
     nav_production: "Production",
+    nav_spiritStock: "Spirit",
     nav_bottling: "Bottling",
     nav_inventory: "Inventory",
     nav_backoffice: "Backoffice",
@@ -111,6 +112,17 @@ const I18N = {
     mod_inventory: "Inventory",
     mod_bottleInventory: "Bottle Inventory",
     mod_rawInventory: "Raw Material Inventory",
+    mod_spiritStock: "Spirit Pipeline",
+
+    // ---------- Spirit Pipeline ----------
+    spirit_pipeline: "Distillation Pipeline",
+    spirit_d1Label: "First Distillation (D1)",
+    spirit_d2Label: "Second Distillation (D2)",
+    spirit_produced: "Produced (L)",
+    spirit_consumed: "Consumed (L)",
+    spirit_available: "Available (L)",
+    spirit_readyToBottle: "Ready to Bottle",
+    spirit_noData: "No distillation records yet.",
 
     // Settings
     settings: "Settings",
@@ -192,6 +204,7 @@ const I18N = {
     d2_temp: "Temperature (°C)",
     d2_timeRange: "Time Range",
     d2_quantity: "Quantity (L)",
+    d2_d1InputQty: "D1 Spirit Consumed (L)",
 
     // ---------- Bottling ----------
     bt_drinkType: "Drink Type",
@@ -205,6 +218,7 @@ const I18N = {
     bt_taste: "Taste & Smell",
     bt_contaminants: "Contaminant-Free",
     bt_bottleCount: "Bottle Count",
+    bt_d2InputQty: "D2 Spirit Consumed (L)",
     bt_decision: "Decision",
     bt_qaSignature: "QA Signature",
     bt_pendingApproval: "Pending Approval",
@@ -395,6 +409,7 @@ const I18N = {
     nav_dashboard: "לוח בקרה",
     nav_receiving: "קבלה",
     nav_production: "ייצור",
+    nav_spiritStock: "אלכוהול",
     nav_bottling: "ביקבוק",
     nav_inventory: "מלאי",
     nav_backoffice: "ניהול",
@@ -409,6 +424,17 @@ const I18N = {
     mod_inventory: "מלאי",
     mod_bottleInventory: "מלאי בקבוקים",
     mod_rawInventory: "מלאי חומרי גלם",
+    mod_spiritStock: "צינור אלכוהול",
+
+    // ---------- Spirit Pipeline ----------
+    spirit_pipeline: "צינור הזיקוק",
+    spirit_d1Label: "זיקוק ראשון (D1)",
+    spirit_d2Label: "זיקוק שני (D2)",
+    spirit_produced: "יוצר (ל')",
+    spirit_consumed: "נוצל (ל')",
+    spirit_available: "זמין (ל')",
+    spirit_readyToBottle: "מוכן לביקבוק",
+    spirit_noData: "אין רשומות זיקוק עדיין.",
 
     // ---------- Raw Materials ----------
     rm_supplier: "ספק",
@@ -475,6 +501,7 @@ const I18N = {
     d2_temp: "טמפרטורה (°C)",
     d2_timeRange: "טווח זמן",
     d2_quantity: "כמות (ליטר)",
+    d2_d1InputQty: "כמות זיקוק 1 שנוצלה (ל')",
 
     // ---------- Bottling ----------
     bt_drinkType: "סוג משקה",
@@ -488,6 +515,7 @@ const I18N = {
     bt_taste: "טעם וריח",
     bt_contaminants: "נקי ממזהמים",
     bt_bottleCount: "מספר בקבוקים",
+    bt_d2InputQty: "כמות זיקוק 2 שנוצלה (ל')",
     bt_decision: "החלטה",
     bt_qaSignature: "חתימת בקרת איכות",
     bt_pendingApproval: "ממתין לאישור",
@@ -664,6 +692,7 @@ const I18N = {
     nav_dashboard: "แดชบอร์ด",
     nav_receiving: "การรับของ",
     nav_production: "การผลิต",
+    nav_spiritStock: "สุรา",
     nav_bottling: "การบรรจุขวด",
     nav_inventory: "คลังสินค้า",
     nav_backoffice: "หลังบ้าน",
@@ -678,6 +707,17 @@ const I18N = {
     mod_inventory: "คลังสินค้า",
     mod_bottleInventory: "คลังขวด",
     mod_rawInventory: "คลังวัตถุดิบ",
+    mod_spiritStock: "ท่อสุรา",
+
+    // ---------- Spirit Pipeline ----------
+    spirit_pipeline: "ท่อการกลั่น",
+    spirit_d1Label: "กลั่นครั้งที่ 1 (D1)",
+    spirit_d2Label: "กลั่นครั้งที่ 2 (D2)",
+    spirit_produced: "ผลิต (ล.)",
+    spirit_consumed: "ใช้แล้ว (ล.)",
+    spirit_available: "พร้อมใช้ (ล.)",
+    spirit_readyToBottle: "พร้อมบรรจุขวด",
+    spirit_noData: "ยังไม่มีข้อมูลการกลั่น",
 
     // Settings
     settings: "การตั้งค่า",
@@ -759,6 +799,7 @@ const I18N = {
     d2_temp: "อุณหภูมิ (°C)",
     d2_timeRange: "ช่วงเวลา",
     d2_quantity: "จำนวน (ลิตร)",
+    d2_d1InputQty: "สุราจากกลั่น 1 ที่ใช้ (ล.)",
 
     // ---------- Bottling ----------
     bt_drinkType: "ประเภทเครื่องดื่ม",
@@ -772,6 +813,7 @@ const I18N = {
     bt_taste: "รสชาติและกลิ่น",
     bt_contaminants: "ปราศจากสิ่งปนเปื้อน",
     bt_bottleCount: "จำนวนขวด",
+    bt_d2InputQty: "สุราจากกลั่น 2 ที่ใช้ (ล.)",
     bt_decision: "การตัดสินใจ",
     bt_qaSignature: "ลายเซ็น QA",
     bt_pendingApproval: "รอการอนุมัติ",

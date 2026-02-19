@@ -111,6 +111,7 @@ function syncModuleToSheets(module) {
       { key: 'temp', labelKey: 'd2_temp' },
       { key: 'timeRange', labelKey: 'd2_timeRange' },
       { key: 'quantity', labelKey: 'd2_quantity' },
+      { key: 'd1InputQty', labelKey: 'd2_d1InputQty' },
     ],
     bottling: [
       { key: 'date', labelKey: 'bt_bottlingDate' },
@@ -124,6 +125,7 @@ function syncModuleToSheets(module) {
       { key: 'taste', labelKey: 'bt_taste' },
       { key: 'contaminants', labelKey: 'bt_contaminants' },
       { key: 'bottleCount', labelKey: 'bt_bottleCount' },
+      { key: 'd2InputQty', labelKey: 'bt_d2InputQty' },
       { key: 'decision', labelKey: 'bt_decision' },
     ],
   };
@@ -141,6 +143,75 @@ function syncModuleToSheets(module) {
       keys,
       labels,
       records,
+    }),
+    mode: 'no-cors',
+  }).catch(() => {});
+}
+
+// Append a timestamped inventory snapshot row to the Sheets Inventory ledger.
+// Called automatically after any record is saved, updated, or deleted.
+function syncInventorySnapshot(triggeredBy) {
+  const url = localStorage.getItem(SHEETS_URL_KEY) || '';
+  if (!url) return;
+
+  const bottlingRecords = getData(STORE_KEYS.bottling);
+  const rawRecords = getData(STORE_KEYS.rawMaterials);
+  const dateRecords = getData(STORE_KEYS.dateReceiving);
+  const fermRecords = getData(STORE_KEYS.fermentation);
+  const d1Records = getData(STORE_KEYS.distillation1);
+  const d2Records = getData(STORE_KEYS.distillation2);
+
+  const bottleInv = {};
+  DRINK_TYPES.forEach(dt => { bottleInv[dt] = 0; });
+  bottlingRecords.forEach(r => {
+    if (r.drinkType && r.decision === 'approved') {
+      bottleInv[r.drinkType] = (bottleInv[r.drinkType] || 0) + (parseInt(r.bottleCount) || 0);
+    }
+  });
+
+  const totalDatesReceived = dateRecords.reduce((sum, r) => sum + (parseFloat(r.weight) || 0), 0);
+  const totalDatesInFerm = fermRecords.reduce((sum, r) => {
+    if (r.datesCrates !== undefined && r.datesCrates !== '') return sum + (parseFloat(r.datesCrates) || 0) * 20;
+    return sum + (parseFloat(r.datesKg) || 0);
+  }, 0);
+
+  const d1Produced = d1Records.reduce((sum, r) => sum + (parseFloat(r.distilledQty) || 0), 0);
+  const d1Consumed = d2Records.reduce((sum, r) => sum + (parseFloat(r.d1InputQty) || 0), 0);
+  const d2Produced = d2Records.reduce((sum, r) => sum + (parseFloat(r.quantity) || 0), 0);
+  const d2Consumed = bottlingRecords.reduce((sum, r) => sum + (parseFloat(r.d2InputQty) || 0), 0);
+
+  const session = getSession();
+  const record = {
+    timestamp: new Date().toISOString(),
+    user: session?.username || 'unknown',
+    triggeredBy: triggeredBy || 'save',
+    dates_available: Math.max(0, totalDatesReceived - totalDatesInFerm),
+    dates_received: totalDatesReceived,
+    dates_in_ferm: totalDatesInFerm,
+    d1_produced: d1Produced,
+    d1_available: Math.max(0, d1Produced - d1Consumed),
+    d2_produced: d2Produced,
+    d2_available: Math.max(0, d2Produced - d2Consumed),
+    ...DRINK_TYPES.reduce((acc, dt) => ({ ...acc, [dt]: bottleInv[dt] || 0 }), {}),
+  };
+
+  const keys = Object.keys(record);
+  const labels = [
+    'Timestamp', 'User', 'Triggered By',
+    t('inv_dates'), 'Dates Received (kg)', t('inv_datesUsed'),
+    'D1 Produced (L)', 'D1 Available (L)',
+    'D2 Produced (L)', 'D2 Available (L)',
+    ...DRINK_TYPES.map(dt => t(dt)),
+  ];
+
+  fetch(url, {
+    method: 'POST',
+    body: JSON.stringify({
+      sheetName: t('mod_inventory'),
+      action: 'append',
+      keys,
+      labels,
+      records: [record],
     }),
     mode: 'no-cors',
   }).catch(() => {});
@@ -436,10 +507,10 @@ function renderHeader() {
     <div class="app-header">
       <div class="header-left">
         ${showBack ? `<button class="header-back" id="header-back"><i data-feather="arrow-left"></i></button>` : ''}
-        <span class="header-title">${title}</span>
-      </div>
-      <div class="header-right">
         <span class="user-badge"><span class="role-dot ${roleClass}"></span>${getUserDisplayName()}</span>
+      </div>
+      <span class="header-title">${title}</span>
+      <div class="header-right">
         <button class="lang-btn" onclick="toggleLang()">${t('langToggle')}</button>
         <button class="logout-btn" id="logout-btn"><i data-feather="log-out" style="width:14px;height:14px"></i></button>
       </div>
@@ -456,6 +527,7 @@ function getModuleTitle(mod) {
     distillation2: 'mod_distillation2',
     bottling: 'mod_bottling',
     inventory: 'mod_inventory',
+    spiritStock: 'mod_spiritStock',
   };
   return t(map[mod] || mod);
 }
@@ -468,6 +540,7 @@ function renderBottomNav() {
     { id: 'dashboard', icon: 'grid', label: 'nav_dashboard' },
     { id: 'receiving', icon: 'package', label: 'nav_receiving' },
     { id: 'production', icon: 'activity', label: 'nav_production' },
+    { id: 'spiritStock', icon: 'droplet', label: 'nav_spiritStock' },
     { id: 'bottling', icon: 'check-circle', label: 'nav_bottling' },
     { id: 'inventory', icon: 'database', label: 'nav_inventory' },
   ];
@@ -508,6 +581,7 @@ function bindNav() {
       if (nav === 'dashboard') { currentModule = null; _navDirection = 'back'; }
       else if (nav === 'receiving') { currentModule = 'rawMaterials'; }
       else if (nav === 'production') { currentModule = 'fermentation'; }
+      else if (nav === 'spiritStock') { currentModule = 'spiritStock'; }
       else if (nav === 'bottling') { currentModule = 'bottling'; }
       else if (nav === 'inventory') { currentModule = 'inventory'; }
       else if (nav === 'settings') { currentModule = null; }
@@ -663,6 +737,10 @@ function renderModuleList(container) {
     renderInventory(container);
     return;
   }
+  if (currentModule === 'spiritStock') {
+    renderSpiritStock(container);
+    return;
+  }
 
   const storeKey = STORE_KEYS[currentModule];
   if (!storeKey) { container.innerHTML = '<p>Unknown module</p>'; return; }
@@ -755,6 +833,7 @@ function renderModuleList(container) {
       if (records.find(r => r.id === btn.dataset.id)) {
         updateRecord(storeKey, btn.dataset.id, { decision: 'approved' });
         syncModuleToSheets(currentModule);
+        syncInventorySnapshot('approve');
         renderApp();
       }
     });
@@ -875,6 +954,7 @@ function renderModuleDetail(container) {
       showManagerPasswordModal(() => {
         deleteRecord(STORE_KEYS[currentModule], editingRecord.id);
         syncModuleToSheets(currentModule);
+        syncInventorySnapshot('delete');
         editingRecord = null;
         currentView = 'list';
         _navDirection = 'back';
@@ -1263,6 +1343,7 @@ function saveCurrentForm() {
 
   showToast(t('saved'));
   syncModuleToSheets(currentModule);
+  syncInventorySnapshot('save');
   editingRecord = null;
   currentView = 'list';
   _navDirection = 'back';
@@ -1382,20 +1463,6 @@ function renderInventory(container) {
   const availableDates = Math.max(0, totalDatesReceived - totalDatesInFerm);
   const activeFerm = fermRecords.filter(r => !r.sentToDistillation).length;
 
-  const currentSnapshot = {
-    items: {
-      ...bottleInv,
-      ...rawInv,
-      totalDatesReceived,
-      totalDatesInFerm,
-      availableDates,
-      activeFerm
-    }
-  };
-
-  const versions = getData(STORE_KEYS.inventoryVersions);
-  const lastVersion = versions[0] || null;
-
   container.innerHTML = `
     ${totalPending > 0 ? `
     <div class="inv-pending-banner">
@@ -1406,7 +1473,6 @@ function renderInventory(container) {
     <div class="tab-bar">
       <button class="tab-btn active" data-inv-tab="bottles">${t('mod_bottleInventory')}</button>
       <button class="tab-btn" data-inv-tab="raw">${t('mod_rawInventory')}</button>
-      <button class="tab-btn" data-inv-tab="versions">${t('inventoryHistory')}</button>
     </div>
 
     <div id="inv-bottles">
@@ -1458,32 +1524,6 @@ function renderInventory(container) {
       </div>
     </div>
 
-    <div id="inv-versions" style="display:none;">
-      <div class="inv-section">
-        ${versions.length === 0 ? `<div class="empty-state"><i data-feather="clock"></i><p>${t('noData')}</p></div>` : `
-          <div class="record-list">
-            ${versions.map(v => `
-              <div class="record-item inv-ver-item" data-ver="${v.version}">
-                <div class="ri-top">
-                  <span class="ri-title">${t('versionLabel')} ${v.version}</span>
-                  <span class="ri-date">${formatDate(v.createdAt)}</span>
-                </div>
-                <div class="ri-details">
-                   ${v.createdBy} &bull; ${Object.keys(v.gaps).length > 0 ? t('gapAnalysis') : t('saved')}
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        `}
-      </div>
-    </div>
-
-    <div style="padding:16px 0 0;">
-      <button class="btn btn-primary" id="release-ver-btn" style="width:100%;">
-        <i data-feather="save" style="width:14px;height:14px;vertical-align:middle;margin-inline-end:6px;"></i>
-        ${t('releaseVersion')}
-      </button>
-    </div>
 
   `;
 
@@ -1495,36 +1535,129 @@ function renderInventory(container) {
       const tab = btn.dataset.invTab;
       container.querySelector('#inv-bottles').style.display = tab === 'bottles' ? '' : 'none';
       container.querySelector('#inv-raw').style.display = tab === 'raw' ? '' : 'none';
-      container.querySelector('#inv-versions').style.display = tab === 'versions' ? '' : 'none';
-    });
-  });
-
-  // Bind Release Version button
-  container.querySelector('#release-ver-btn').addEventListener('click', () => {
-    if (confirm(t('releaseVersion') + '?')) {
-      saveInventoryVersion(currentSnapshot);
-      showToast(t('saved'));
-      renderApp();
-    }
-  });
-
-  // Version Detail View
-  container.querySelectorAll('.inv-ver-item').forEach(item => {
-    item.addEventListener('click', () => {
-      const verId = item.dataset.ver;
-      const ver = versions.find(v => String(v.version) === verId);
-      if (ver) {
-        let gapSummary = Object.entries(ver.gaps)
-          .filter(([_, diff]) => diff !== 0)
-          .map(([key, diff]) => `${key}: ${diff > 0 ? '+' : ''}${diff}`)
-          .join('\n');
-        alert(`${t('versionLabel')} ${ver.version} ${t('gapsLabel')}:\n${gapSummary || t('noGaps')}`);
-      }
     });
   });
 
   // Schedule auto-refresh when pending records become visible
   scheduleInventoryRefresh(container);
+}
+
+// ============================================================
+// SPIRIT PIPELINE SCREEN
+// ============================================================
+function renderSpiritStock(container) {
+  const d1Records = getData(STORE_KEYS.distillation1);
+  const d2Records = getData(STORE_KEYS.distillation2);
+  const bottlingRecords = getData(STORE_KEYS.bottling);
+
+  // D1 totals
+  const d1Produced = d1Records.reduce((sum, r) => sum + (parseFloat(r.distilledQty) || 0), 0);
+  const d1Consumed = d2Records.reduce((sum, r) => sum + (parseFloat(r.d1InputQty) || 0), 0);
+  const d1Available = Math.max(0, d1Produced - d1Consumed);
+  const d1HasConsumed = d1Consumed > 0;
+
+  // D2 totals
+  const d2Produced = d2Records.reduce((sum, r) => sum + (parseFloat(r.quantity) || 0), 0);
+  const d2Consumed = bottlingRecords.reduce((sum, r) => sum + (parseFloat(r.d2InputQty) || 0), 0);
+  const d2Available = Math.max(0, d2Produced - d2Consumed);
+  const d2HasConsumed = d2Consumed > 0;
+
+  const hasAnyData = d1Records.length > 0 || d2Records.length > 0;
+
+  if (!hasAnyData) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <i data-feather="droplet"></i>
+        <p>${t('spirit_noData')}</p>
+      </div>`;
+    return;
+  }
+
+  const fmtL = n => n.toFixed(1) + ' L';
+
+  container.innerHTML = `
+    <div class="section-title">${t('spirit_pipeline')}</div>
+
+    <div class="spirit-pipeline">
+
+      <!-- D1 Stage -->
+      <div class="spirit-stage">
+        <div class="spirit-stage-header">
+          <i data-feather="zap" style="width:16px;height:16px;"></i>
+          <span>${t('spirit_d1Label')}</span>
+        </div>
+        <div class="spirit-stage-stats">
+          <div class="spirit-stat">
+            <span class="spirit-stat-label">${t('spirit_produced')}</span>
+            <span class="spirit-stat-val">${fmtL(d1Produced)}</span>
+          </div>
+          ${d1HasConsumed ? `
+          <div class="spirit-stat">
+            <span class="spirit-stat-label">${t('spirit_consumed')}</span>
+            <span class="spirit-stat-val spirit-stat-out">− ${fmtL(d1Consumed)}</span>
+          </div>` : ''}
+          <div class="spirit-stat spirit-stat-available">
+            <span class="spirit-stat-label">${t('spirit_available')}</span>
+            <span class="spirit-stat-val spirit-stat-in">${fmtL(d1Available)}</span>
+          </div>
+        </div>
+        <div class="spirit-count-note">${d1Records.length} ${t('recentEntries').toLowerCase()}</div>
+      </div>
+
+      <div class="spirit-arrow"><i data-feather="arrow-down"></i></div>
+
+      <!-- D2 Stage -->
+      <div class="spirit-stage">
+        <div class="spirit-stage-header">
+          <i data-feather="filter" style="width:16px;height:16px;"></i>
+          <span>${t('spirit_d2Label')}</span>
+        </div>
+        <div class="spirit-stage-stats">
+          <div class="spirit-stat">
+            <span class="spirit-stat-label">${t('spirit_produced')}</span>
+            <span class="spirit-stat-val">${fmtL(d2Produced)}</span>
+          </div>
+          ${d2HasConsumed ? `
+          <div class="spirit-stat">
+            <span class="spirit-stat-label">${t('spirit_consumed')}</span>
+            <span class="spirit-stat-val spirit-stat-out">− ${fmtL(d2Consumed)}</span>
+          </div>` : ''}
+          <div class="spirit-stat spirit-stat-available">
+            <span class="spirit-stat-label">${t('spirit_available')}</span>
+            <span class="spirit-stat-val spirit-stat-in">${fmtL(d2Available)}</span>
+          </div>
+        </div>
+        <div class="spirit-count-note">${d2Records.length} ${t('recentEntries').toLowerCase()}</div>
+      </div>
+
+      <div class="spirit-arrow"><i data-feather="arrow-down"></i></div>
+
+      <!-- Ready to Bottle -->
+      <div class="spirit-stage spirit-stage-final">
+        <div class="spirit-stage-header">
+          <i data-feather="package" style="width:16px;height:16px;"></i>
+          <span>${t('spirit_readyToBottle')}</span>
+        </div>
+        <div class="spirit-stage-stats">
+          <div class="spirit-stat spirit-stat-available">
+            <span class="spirit-stat-label">${t('spirit_available')}</span>
+            <span class="spirit-stat-val spirit-stat-in" style="font-size:22px;">${fmtL(d2Available)}</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    ${(!d1HasConsumed || !d2HasConsumed) ? `
+    <div class="spirit-hint">
+      <i data-feather="info" style="width:13px;height:13px;margin-inline-end:5px;vertical-align:middle;"></i>
+      ${!d1HasConsumed && !d2HasConsumed
+        ? 'Add "D1 Spirit Consumed" to D2 records and "D2 Spirit Consumed" to Bottling records to track net balances.'
+        : !d1HasConsumed
+          ? 'Add "D1 Spirit Consumed" to D2 records to track D1 net balance.'
+          : 'Add "D2 Spirit Consumed" to Bottling records to track D2 net balance.'}
+    </div>` : ''}
+  `;
 }
 
 // ============================================================
@@ -1618,6 +1751,7 @@ function getModuleFields(mod) {
         { key: 'temp', labelKey: 'd2_temp', type: 'number', step: '0.1', default: '99.9' },
         { key: 'timeRange', labelKey: 'd2_timeRange', type: 'time-range' },
         { key: 'quantity', labelKey: 'd2_quantity', type: 'number', required: true, step: '0.1' },
+        { key: 'd1InputQty', labelKey: 'd2_d1InputQty', type: 'number', step: '0.1', min: 0 },
       ];
 
     case 'bottling':
@@ -1648,6 +1782,7 @@ function getModuleFields(mod) {
         },
         { key: 'contaminants', labelKey: 'bt_contaminants', type: 'toggle' },
         { key: 'bottleCount', labelKey: 'bt_bottleCount', type: 'number', required: true, min: 0 },
+        { key: 'd2InputQty', labelKey: 'bt_d2InputQty', type: 'number', step: '0.1', min: 0 },
         ...(hasPermission('canApproveBottling') ? [
           { key: 'decision', labelKey: 'bt_decision', type: 'decision', required: true },
         ] : []),

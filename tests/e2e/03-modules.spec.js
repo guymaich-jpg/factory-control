@@ -106,7 +106,8 @@ test.describe('Inventory Module', () => {
   test('shows inventory tabs', async ({ page }) => {
     await expect(page.locator('[data-inv-tab="bottles"]')).toBeVisible();
     await expect(page.locator('[data-inv-tab="raw"]')).toBeVisible();
-    await expect(page.locator('[data-inv-tab="versions"]')).toBeVisible();
+    // versions tab removed — inventory is now simplified to bottles + raw materials
+    await expect(page.locator('[data-inv-tab="versions"]')).toHaveCount(0);
   });
 
   test('can switch inventory tabs', async ({ page }) => {
@@ -114,11 +115,20 @@ test.describe('Inventory Module', () => {
     await expect(page.locator('#inv-raw')).toBeVisible();
     await expect(page.locator('#inv-bottles')).not.toBeVisible();
   });
+});
 
-  test('can release inventory version', async ({ page }) => {
-    page.on('dialog', d => d.accept());
-    await page.click('#release-ver-btn');
-    await page.click('[data-inv-tab="versions"]');
-    await expect(page.locator('.inv-ver-item')).toBeVisible({ timeout: 3000 });
+test.describe('Spirit Stock Screen', () => {
+  test.beforeEach(async ({ page }) => {
+    await freshApp(page);
+    await loginAsManager(page);
+  });
+
+  test('spirit stock nav item exists and screen loads', async ({ page }) => {
+    await expect(page.locator('[data-nav="spiritStock"]')).toBeVisible();
+    await page.click('[data-nav="spiritStock"]');
+    // Should show either empty state or the pipeline section title
+    const emptyState = page.locator('.empty-state');
+    const pipeline = page.locator('.spirit-pipeline');
+    await expect(emptyState.or(pipeline)).toBeVisible({ timeout: 3000 });
   });
 });

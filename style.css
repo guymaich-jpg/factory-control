@@ -289,21 +289,23 @@ html[dir="rtl"] .toggle-switch input:checked+.toggle-slider::before {
 .app-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  padding-top: max(12px, env(safe-area-inset-top));
+  padding: 8px 12px;
+  padding-top: max(8px, env(safe-area-inset-top));
   background: var(--bg-card);
   border-bottom: 1px solid var(--border);
-  min-height: 56px;
+  min-height: 52px;
   position: sticky;
   top: 0;
   z-index: 100;
+  gap: 8px;
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
 }
 
 .header-back {
@@ -314,17 +316,26 @@ html[dir="rtl"] .toggle-switch input:checked+.toggle-slider::before {
   padding: 4px;
   display: flex;
   align-items: center;
+  flex-shrink: 0;
+  touch-action: manipulation;
 }
 
 .header-title {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 700;
+  flex: 2;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .header-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  flex: 1;
+  justify-content: flex-end;
 }
 
 .lang-btn,
@@ -1486,3 +1497,100 @@ html[dir="rtl"] .toggle-switch input:checked+.toggle-slider::before {
   flex-shrink: 0;
   margin-top: 1px;
 }
+
+/* ============================================================
+   SPIRIT PIPELINE SCREEN
+   ============================================================ */
+.spirit-pipeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 12px;
+}
+
+.spirit-stage {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 0;
+}
+
+.spirit-stage-final {
+  border-color: var(--success);
+}
+
+.spirit-stage-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.spirit-stage-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.spirit-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.spirit-stat-available {
+  border-top: 1px solid var(--border);
+  padding-top: 6px;
+  margin-top: 2px;
+}
+
+.spirit-stat-label {
+  color: var(--text-secondary);
+}
+
+.spirit-stat-val {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--text);
+}
+
+.spirit-stat-in {
+  color: var(--success);
+}
+
+.spirit-stat-out {
+  color: var(--danger);
+  font-size: 13px;
+}
+
+.spirit-arrow {
+  display: flex;
+  justify-content: center;
+  padding: 4px 0;
+  color: var(--text-muted, var(--text-secondary));
+  opacity: 0.5;
+}
+
+.spirit-count-note {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 10px;
+  opacity: 0.7;
+}
+
+.spirit-hint {
+  margin-top: 16px;
+  padding: 10px 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
