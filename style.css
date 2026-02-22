@@ -694,7 +694,12 @@ html[dir="rtl"] .toggle-switch input:checked + .toggle-slider::before {
   letter-spacing: 0.3px;
 }
 
-.module-card .mc-count { display: none; } /* hidden — clean look */
+.module-card .mc-count {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 3px;
+  opacity: 0.75;
+}
 
 /* ============================================================
    RECENT ACTIVITY (Dashboard)
