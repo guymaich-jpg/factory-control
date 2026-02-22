@@ -249,6 +249,82 @@ async function fbDeleteUser(username) {
 }
 
 // ============================================================
+// Google SSO — Identity Services (GIS)
+// ============================================================
+// SETUP:
+//   1. Go to console.cloud.google.com → APIs & Services → Credentials
+//   2. Create an OAuth 2.0 Client ID (Web application)
+//   3. Add your app's URL to "Authorized JavaScript origins"
+//   4. Paste the Client ID below and set GOOGLE_SSO_ENABLED = true
+// ============================================================
+
+const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+const GOOGLE_SSO_ENABLED = false;
+
+let _gsiReady = false;
+let _gsiCallback = null;
+
+/**
+ * Load the Google Identity Services library and initialise it.
+ * callback(googleUser) is called with { email, name, picture } on success.
+ */
+function initGoogleSSO(callback) {
+  if (!GOOGLE_SSO_ENABLED || !GOOGLE_CLIENT_ID ||
+      GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com') return;
+
+  _gsiCallback = callback;
+
+  const script = document.createElement('script');
+  script.src = 'https://accounts.google.com/gsi/client';
+  script.async = true;
+  script.defer = true;
+  script.onload = () => {
+    try {
+      google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: _handleGsiCredential,
+        auto_select: false,
+        cancel_on_tap_outside: true,
+      });
+      _gsiReady = true;
+    } catch (e) {
+      console.warn('[Google SSO] Init error:', e.message);
+    }
+  };
+  script.onerror = () => console.warn('[Google SSO] Failed to load GIS library');
+  document.head.appendChild(script);
+}
+
+/** Decode the signed JWT and pass user info to the app callback. */
+function _handleGsiCredential(response) {
+  try {
+    const parts = response.credential.split('.');
+    // base64url → base64 → JSON
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+    if (_gsiCallback) {
+      _gsiCallback({ email: payload.email, name: payload.name, picture: payload.picture });
+    }
+  } catch (e) {
+    console.warn('[Google SSO] Credential decode error:', e);
+  }
+}
+
+/**
+ * Trigger the Google One Tap / Sign-In prompt.
+ * Returns false if SSO is not ready (not configured or library not loaded yet).
+ */
+function triggerGoogleSignIn() {
+  if (!_gsiReady || typeof google === 'undefined') return false;
+  google.accounts.id.prompt();
+  return true;
+}
+
+/** Returns true if Google SSO is configured and the library has loaded. */
+function isGoogleSSOReady() {
+  return _gsiReady;
+}
+
+// ============================================================
 // Sync: push all localStorage data to Firestore (one-time migration)
 // ============================================================
 async function migrateLocalStorageToFirebase() {

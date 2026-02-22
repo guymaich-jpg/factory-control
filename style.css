@@ -326,6 +326,61 @@ html[dir="rtl"] .toggle-switch input:checked + .toggle-slider::before {
 }
 
 /* ============================================================
+   GOOGLE SSO
+   ============================================================ */
+.sso-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 4px;
+  color: var(--text-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  font-weight: 600;
+  width: 100%;
+  max-width: 340px;
+}
+
+.sso-divider::before,
+.sso-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--separator);
+}
+
+.google-sso-btn {
+  width: 100%;
+  max-width: 340px;
+  padding: 14px 16px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--separator);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+  box-shadow: var(--shadow);
+  transition: background 0.2s, transform 0.1s, border-color 0.2s;
+}
+
+.google-sso-btn:hover  { background: var(--bg-surface); border-color: var(--border); }
+.google-sso-btn:active { transform: scale(0.98); }
+
+.google-sso-btn svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+/* ============================================================
    HEADER
    ============================================================ */
 .app-header {
