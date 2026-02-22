@@ -5,7 +5,7 @@
 const { test, expect } = require('@playwright/test');
 const { freshApp, loginAsManager } = require('./helpers');
 
-const EXPECTED_SHEET_URL = 'https://docs.google.com/spreadsheets/d/14rYu6QgRD2r4X4ZjOs45Rqtl4p0XOPvJfcs5BpY54EE/edit?gid=1920486795#gid=1920486795';
+const EXPECTED_SHEET_URL = 'https://docs.google.com/spreadsheets/d/14rYu6QgRD2r4X4ZjOs45Rqtl4p0XOPvJfcs5BpY54EE/edit?gid=1634965365#gid=1634965365';
 
 test.describe('Google Sheets: Inventory link', () => {
   test('inventory sheet link is present on management screen with correct attributes', async ({ page }) => {
