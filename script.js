@@ -45,11 +45,11 @@ function showToast(msg) {
 // ============================================================
 // GOOGLE SHEETS SYNC
 // ============================================================
-const SHEETS_URL_KEY = 'factory_sheets_url';
-const INVENTORY_SHEET_URL = 'https://docs.google.com/spreadsheets/d/14rYu6QgRD2r4X4ZjOs45Rqtl4p0XOPvJfcs5BpY54EE/edit?gid=1920486795#gid=1920486795';
+const SHEETS_SYNC_URL = 'https://script.google.com/macros/s/AKfycbw3dL8YRQ63TFJ4UzIAD5dUVVEJ4RX6z5dynQHU5thdrmmrjaRcS7VkQgSjqcECboha/exec';
+const INVENTORY_SHEET_URL = 'https://docs.google.com/spreadsheets/d/14rYu6QgRD2r4X4ZjOs45Rqtl4p0XOPvJfcs5BpY54EE/edit?gid=1634965365#gid=1634965365';
 
 function syncModuleToSheets(module) {
-  const url = localStorage.getItem(SHEETS_URL_KEY) || '';
+  const url = SHEETS_SYNC_URL;
   if (!url) return;
 
   const storeKey = STORE_KEYS[module];
@@ -169,7 +169,7 @@ function toggleTheme() {
 // Append a timestamped inventory snapshot row to the Sheets Inventory ledger.
 // Called automatically after any record is saved, updated, or deleted.
 function syncInventorySnapshot(triggeredBy) {
-  const url = localStorage.getItem(SHEETS_URL_KEY) || '';
+  const url = SHEETS_SYNC_URL;
   if (!url) return;
 
   const bottlingRecords = getData(STORE_KEYS.bottling);
@@ -1909,18 +1909,7 @@ function renderBackoffice(container) {
          style="display:flex;align-items:center;gap:8px;margin-bottom:12px;text-decoration:none;">
         <i data-feather="external-link"></i> ${t('viewInventorySheet')}
       </a>
-      <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">${t('sheetsUrlHint')}</p>
-      <div class="form-group">
-        <label class="form-label">${t('sheetsUrl')}</label>
-        <input type="url" id="sheets-url-input" class="form-control"
-          placeholder="${t('sheetsUrlPlaceholder')}"
-          value="${localStorage.getItem(SHEETS_URL_KEY) || ''}"
-          style="font-size:12px;">
-      </div>
       <div style="display:flex;gap:10px;margin-top:8px;">
-        <button class="btn btn-primary" id="btn-save-sheets-url" style="flex:1;">
-          <i data-feather="link"></i> ${t('sheetsSave')}
-        </button>
         <button class="btn btn-secondary" id="btn-sync-all-sheets" style="flex:1;">
           <i data-feather="refresh-cw"></i> ${t('sheetsSyncAll')}
         </button>
@@ -1954,23 +1943,10 @@ function renderBackoffice(container) {
     });
   }
 
-  // Bind Sheets URL save
-  const saveSheetsBtn = container.querySelector('#btn-save-sheets-url');
-  if (saveSheetsBtn) {
-    saveSheetsBtn.addEventListener('click', () => {
-      const input = container.querySelector('#sheets-url-input');
-      const url = input ? input.value.trim() : '';
-      localStorage.setItem(SHEETS_URL_KEY, url);
-      showToast(t('sheetsSaved'));
-    });
-  }
-
   // Bind Sync All — pushes every module to Sheets at once
   const syncAllBtn = container.querySelector('#btn-sync-all-sheets');
   if (syncAllBtn) {
     syncAllBtn.addEventListener('click', () => {
-      const url = localStorage.getItem(SHEETS_URL_KEY) || '';
-      if (!url) { showToast(t('sheetsUrlPlaceholder')); return; }
       ['rawMaterials', 'dateReceiving', 'fermentation', 'distillation1', 'distillation2', 'bottling']
         .forEach(m => syncModuleToSheets(m));
       showToast(t('sheetsSyncAll') + ' ✓');
@@ -2145,7 +2121,7 @@ function renderUserForm(container) {
 
 // Fire-and-forget notification to GAS webhook so admins get an email
 function notifyAdminsOfRequest(request) {
-  const url = localStorage.getItem(SHEETS_URL_KEY) || '';
+  const url = SHEETS_SYNC_URL;
   if (!url) return;
   fetch(url, {
     method: 'POST',

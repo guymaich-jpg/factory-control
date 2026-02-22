@@ -200,7 +200,6 @@ All data is stored in the browser's `localStorage`. Each module has its own key:
 | `factory_users`                | User accounts         |
 | `factory_session`              | Current login session |
 | `factory_lang`                 | Language setting (en/he) |
-| `factory_sheets_url`           | Google Sheets sync URL |
 | `factory_customSuppliers`      | Custom supplier options|
 | `factory_customOptions_*`      | Dynamic dropdown items |
 
