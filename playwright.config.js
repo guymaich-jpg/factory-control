@@ -28,10 +28,11 @@ module.exports = defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
-    // Mobile Safari (WebKit) disabled — webkit binaries unavailable in this environment
+    // Mobile Chrome — skips pure-logic security tests (they use test.skip() internally too)
     {
       name: 'Mobile Chrome',
       use: { ...devices['Pixel 5'] },
+      testIgnore: ['**/05-security.spec.js', '**/07-security-v2.spec.js', '**/08-sheets.spec.js'],
     },
   ],
 });

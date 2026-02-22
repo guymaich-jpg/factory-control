@@ -1,5 +1,6 @@
 // ============================================================
 // Security Tests: Access control, injection, session
+// Desktop-only — these test JS logic, not viewport behavior
 // ============================================================
 const { test, expect } = require('@playwright/test');
 const { freshApp, loginAsWorker, loginAsManager, loginAsAdmin } = require('./helpers');
@@ -18,7 +19,6 @@ test.describe('Security: Session Management', () => {
     await page.click('#login-btn');
     await expect(page.locator('.app-header')).toBeVisible();
 
-    // Simulate session expiry by clearing localStorage session
     await page.evaluate(() => localStorage.removeItem('factory_session'));
     await page.reload();
     await expect(page.locator('#login-btn')).toBeVisible();
@@ -26,52 +26,30 @@ test.describe('Security: Session Management', () => {
 });
 
 test.describe('Security: Permission Enforcement', () => {
-  test('worker cannot access backoffice via URL manipulation', async ({ page }) => {
+  test('worker permissions are enforced at code level', async ({ page }) => {
     await freshApp(page);
     await loginAsWorker(page);
-    // Attempt to manually trigger backoffice render
-    const result = await page.evaluate(() => {
-      if (typeof hasPermission === 'function') {
-        return hasPermission('canAccessBackoffice');
-      }
-      return 'n/a';
-    });
-    expect(result).toBe(false);
-  });
 
-  test('worker cannot delete records', async ({ page }) => {
-    await freshApp(page);
-    await loginAsWorker(page);
-    const canDelete = await page.evaluate(() => {
-      if (typeof hasPermission === 'function') {
-        return hasPermission('canDeleteRecords');
-      }
-      return 'n/a';
+    const permissions = await page.evaluate(() => {
+      if (typeof hasPermission !== 'function') return 'n/a';
+      return {
+        backoffice: hasPermission('canAccessBackoffice'),
+        delete: hasPermission('canDeleteRecords'),
+        export: hasPermission('canExportData'),
+      };
     });
-    expect(canDelete).toBe(false);
-  });
-
-  test('worker cannot export data', async ({ page }) => {
-    await freshApp(page);
-    await loginAsWorker(page);
-    const canExport = await page.evaluate(() => {
-      if (typeof hasPermission === 'function') {
-        return hasPermission('canExportData');
-      }
-      return 'n/a';
-    });
-    expect(canExport).toBe(false);
+    expect(permissions.backoffice).toBe(false);
+    expect(permissions.delete).toBe(false);
+    expect(permissions.export).toBe(false);
   });
 });
 
 test.describe('Security: Input Handling', () => {
   test('login error message does not execute scripts', async ({ page }) => {
     await freshApp(page);
-    // Fill with XSS-like input
     await page.fill('#login-user', '<script>alert(1)</script>');
     await page.fill('#login-pass', 'whatever');
     await page.click('#login-btn');
-    // Should show error text, not execute script
     const errorText = await page.locator('#login-error').textContent();
     expect(errorText).not.toContain('<script>');
     await expect(page.locator('.app-header')).not.toBeVisible();
@@ -80,7 +58,6 @@ test.describe('Security: Input Handling', () => {
   test('request access rejects existing user email', async ({ page }) => {
     await freshApp(page);
     await page.click('#go-request');
-    // Try to request access using an email that already belongs to a registered user
     await page.fill('#req-name', 'Copy');
     await page.fill('#req-email', 'guymaich@gmail.com');
     await page.click('#req-btn');
@@ -89,30 +66,21 @@ test.describe('Security: Input Handling', () => {
 });
 
 test.describe('Security: Backward Compatibility', () => {
-  test('app handles empty localStorage gracefully', async ({ page }) => {
+  test('app handles corrupted or missing localStorage gracefully', async ({ page }) => {
+    // Empty localStorage
     await page.goto('/');
     await page.evaluate(() => localStorage.clear());
     await page.reload();
     await expect(page.locator('#login-btn')).toBeVisible();
-  });
 
-  test('app recovers from corrupted session data', async ({ page }) => {
-    await page.goto('/');
-    await page.evaluate(() => {
-      localStorage.setItem('factory_session', '{invalid json}');
-    });
+    // Corrupted session
+    await page.evaluate(() => localStorage.setItem('factory_session', '{invalid json}'));
     await page.reload();
-    // Should gracefully show login rather than crashing
     await expect(page.locator('#login-btn')).toBeVisible();
-  });
 
-  test('app recovers from corrupted user data', async ({ page }) => {
-    await page.goto('/');
-    await page.evaluate(() => {
-      localStorage.setItem('factory_users', '{invalid json}');
-    });
+    // Corrupted user data
+    await page.evaluate(() => localStorage.setItem('factory_users', '{invalid json}'));
     await page.reload();
-    // getUsers() falls back to defaults on parse error
     await expect(page.locator('#login-btn')).toBeVisible();
   });
 });

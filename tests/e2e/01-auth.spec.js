@@ -14,7 +14,12 @@ test.describe('Authentication', () => {
     await expect(page.locator('.login-screen')).toBeVisible();
   });
 
-  test('rejects wrong password', async ({ page }) => {
+  test('rejects invalid credentials', async ({ page }) => {
+    // Empty credentials
+    await page.click('#login-btn');
+    await expect(page.locator('.app-header')).not.toBeVisible();
+
+    // Wrong credentials
     await page.fill('#login-user', 'nobody@example.com');
     await page.fill('#login-pass', 'wrongpassword');
     await page.click('#login-btn');
@@ -22,23 +27,19 @@ test.describe('Authentication', () => {
     await expect(page.locator('.app-header')).not.toBeVisible();
   });
 
-  test('rejects empty credentials', async ({ page }) => {
-    await page.click('#login-btn');
-    await expect(page.locator('.app-header')).not.toBeVisible();
-  });
-
-  test('admin can login', async ({ page }) => {
+  test('all roles can login', async ({ page }) => {
+    // Admin
     await loginAsAdmin(page);
     await expect(page.locator('.app-header')).toBeVisible();
     await expect(page.locator('.user-badge')).toBeVisible();
-  });
+    await logout(page);
 
-  test('manager can login', async ({ page }) => {
+    // Manager
     await loginAsManager(page);
     await expect(page.locator('.app-header')).toBeVisible();
-  });
+    await logout(page);
 
-  test('worker can login', async ({ page }) => {
+    // Worker
     await loginAsWorker(page);
     await expect(page.locator('.app-header')).toBeVisible();
   });
@@ -57,34 +58,23 @@ test.describe('Authentication', () => {
     await expect(page.locator('.app-header')).toBeVisible({ timeout: 5000 });
   });
 
-  test('can request access', async ({ page }) => {
+  test('request access works and validates', async ({ page }) => {
+    // Rejects empty fields
     await page.click('#go-request');
-    await expect(page.locator('#req-btn')).toBeVisible();
+    await page.click('#req-btn');
+    await expect(page.locator('#req-error')).not.toBeEmpty();
+
+    // Successful request
     await page.fill('#req-name', 'New User');
     await page.fill('#req-email', 'newuser@example.com');
     await page.click('#req-btn');
     await expect(page.locator('#req-success')).not.toBeEmpty();
-  });
 
-  test('request access rejects empty fields', async ({ page }) => {
-    await page.click('#go-request');
-    await page.click('#req-btn');
-    await expect(page.locator('#req-error')).not.toBeEmpty();
-  });
-
-  test('request access rejects duplicate pending email', async ({ page }) => {
-    // First request
-    await page.click('#go-request');
-    await page.fill('#req-name', 'First Request');
-    await page.fill('#req-email', 'duplicate@example.com');
-    await page.click('#req-btn');
-    await expect(page.locator('#req-success')).not.toBeEmpty();
-
-    // Go back and try same email again
+    // Rejects duplicate pending email
     await page.click('#go-login');
     await page.click('#go-request');
     await page.fill('#req-name', 'Second Request');
-    await page.fill('#req-email', 'duplicate@example.com');
+    await page.fill('#req-email', 'newuser@example.com');
     await page.click('#req-btn');
     await expect(page.locator('#req-error')).not.toBeEmpty();
   });

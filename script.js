@@ -46,6 +46,7 @@ function showToast(msg) {
 // GOOGLE SHEETS SYNC
 // ============================================================
 const SHEETS_URL_KEY = 'factory_sheets_url';
+const INVENTORY_SHEET_URL = 'https://docs.google.com/spreadsheets/d/14rYu6QgRD2r4X4ZjOs45Rqtl4p0XOPvJfcs5BpY54EE/edit?gid=1920486795#gid=1920486795';
 
 function syncModuleToSheets(module) {
   const url = localStorage.getItem(SHEETS_URL_KEY) || '';
@@ -1903,6 +1904,11 @@ function renderBackoffice(container) {
 
     <div style="margin-top:24px;">
       <div class="section-title" style="margin-bottom:12px;">${t('sheetsIntegration')}</div>
+      <a href="${INVENTORY_SHEET_URL}" target="_blank" rel="noopener noreferrer"
+         id="inventory-sheet-link" class="btn btn-secondary"
+         style="display:flex;align-items:center;gap:8px;margin-bottom:12px;text-decoration:none;">
+        <i data-feather="external-link"></i> ${t('viewInventorySheet')}
+      </a>
       <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">${t('sheetsUrlHint')}</p>
       <div class="form-group">
         <label class="form-label">${t('sheetsUrl')}</label>

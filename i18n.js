@@ -140,6 +140,7 @@ const I18N = {
 
     // ---------- Google Sheets ----------
     sheetsIntegration: "Google Sheets Integration",
+    viewInventorySheet: "View Inventory Sheet",
     sheetsUrl: "Apps Script Web App URL",
     sheetsUrlPlaceholder: "https://script.google.com/macros/s/...",
     sheetsUrlHint: "Paste your Google Apps Script URL to sync all modules to Google Sheets automatically.",
@@ -398,6 +399,7 @@ const I18N = {
 
     // ---------- Google Sheets ----------
     sheetsIntegration: "סנכרון Google Sheets",
+    viewInventorySheet: "צפה בגיליון המלאי",
     sheetsUrl: "כתובת Web App של Apps Script",
     sheetsUrlPlaceholder: "https://script.google.com/macros/s/...",
     sheetsUrlHint: "הדבק את כתובת ה-URL כדי לסנכרן את כל הנתונים ל-Google Sheets באופן אוטומטי.",
@@ -749,6 +751,7 @@ const I18N = {
 
     // ---------- Google Sheets ----------
     sheetsIntegration: "การซิงค์ Google Sheets",
+    viewInventorySheet: "ดูชีทสินค้าคงคลัง",
     sheetsUrl: "URL ของ Apps Script Web App",
     sheetsUrlPlaceholder: "https://script.google.com/macros/s/...",
     sheetsUrlHint: "วาง URL เพื่อซิงค์ข้อมูลทั้งหมดไปยัง Google Sheets โดยอัตโนมัติ",
