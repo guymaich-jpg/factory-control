@@ -45,11 +45,109 @@ function showToast(msg) {
 // ============================================================
 // GOOGLE SHEETS SYNC
 // ============================================================
-const SHEETS_SYNC_URL = 'https://script.google.com/macros/s/AKfycbw3dL8YRQ63TFJ4UzIAD5dUVVEJ4RX6z5dynQHU5thdrmmrjaRcS7VkQgSjqcECboha/exec';
+const SHEETS_SYNC_URL_DEFAULT = 'https://script.google.com/macros/s/AKfycbw3dL8YRQ63TFJ4UzIAD5dUVVEJ4RX6z5dynQHU5thdrmmrjaRcS7VkQgSjqcECboha/exec';
 const INVENTORY_SHEET_URL = 'https://docs.google.com/spreadsheets/d/14rYu6QgRD2r4X4ZjOs45Rqtl4p0XOPvJfcs5BpY54EE/edit?gid=1634965365#gid=1634965365';
 
+// Read the GAS URL from localStorage so it can be updated from Settings without a code change
+function getSheetsUrl() {
+  return localStorage.getItem('factory_sheetsUrl') || SHEETS_SYNC_URL_DEFAULT;
+}
+
+// Sync state for the visual indicator
+let _syncQueue = 0;
+
+// ── Sync infrastructure ──────────────────────────────────────
+
+// Sends a POST to GAS. Always fire-and-forget (no-cors), with 1 retry and console logging.
+async function postToSheets(payload) {
+  const url = getSheetsUrl();
+  if (!url) {
+    console.warn('[sync] No GAS URL configured — skipping sync');
+    return;
+  }
+
+  _syncQueue++;
+  updateSyncIndicator('syncing');
+
+  const attempt = async (n) => {
+    try {
+      console.log(`[sync] POST attempt ${n + 1}:`, payload.sheetName, payload.action || 'replace', `(${(payload.records || []).length} records)`);
+      await fetch(url, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        mode: 'no-cors',
+      });
+      console.log(`[sync] POST sent:`, payload.sheetName);
+      return true;
+    } catch (err) {
+      console.error(`[sync] POST failed (attempt ${n + 1}):`, err.message);
+      if (n < 1) {
+        console.log('[sync] Retrying in 2s...');
+        await new Promise(r => setTimeout(r, 2000));
+        return attempt(n + 1);
+      }
+      return false;
+    }
+  };
+
+  const sent = await attempt(0);
+  _syncQueue--;
+
+  if (!sent) {
+    updateSyncIndicator(_syncQueue > 0 ? 'syncing' : 'error');
+    showToast(t('syncFailed'));
+    return;
+  }
+
+  updateSyncIndicator(_syncQueue > 0 ? 'syncing' : 'success');
+}
+
+// Verifies sync via GET request (GAS doGet supports CORS — we can read the response)
+async function verifySyncStatus(sheetName) {
+  const url = getSheetsUrl();
+  if (!url) return { verified: false, error: 'no-url' };
+  try {
+    const resp = await fetch(`${url}?action=syncStatus&sheet=${encodeURIComponent(sheetName)}`);
+    if (!resp.ok) return { verified: false, error: 'http-' + resp.status };
+    const data = await resp.json();
+    return { verified: true, ...data };
+  } catch (err) {
+    console.warn('[sync] Verification failed for', sheetName, err.message);
+    return { verified: false, error: err.message };
+  }
+}
+
+// Shows a small persistent pill in the corner: Syncing / Synced / Sync failed
+function updateSyncIndicator(state) {
+  let indicator = document.querySelector('.sync-indicator');
+  if (!indicator) {
+    indicator = document.createElement('div');
+    indicator.className = 'sync-indicator';
+    document.body.appendChild(indicator);
+  }
+
+  indicator.className = 'sync-indicator sync-' + state;
+
+  switch (state) {
+    case 'syncing':
+      indicator.innerHTML = '<span class="sync-dot pulse"></span>' + t('syncInProgress');
+      break;
+    case 'success':
+      indicator.innerHTML = '<span class="sync-dot green"></span>' + t('syncSuccess');
+      setTimeout(() => { if (indicator.classList.contains('sync-success')) indicator.classList.add('sync-fade'); }, 4000);
+      break;
+    case 'error':
+      indicator.innerHTML = '<span class="sync-dot red"></span>' + t('syncFailed');
+      break;
+    default:
+      indicator.classList.add('sync-fade');
+  }
+}
+
+// ── Module sync ───────────────────────────────────────────────
+
 function syncModuleToSheets(module) {
-  const url = SHEETS_SYNC_URL;
+  const url = getSheetsUrl();
   if (!url) return;
 
   const storeKey = STORE_KEYS[module];
@@ -137,16 +235,12 @@ function syncModuleToSheets(module) {
   const keys = [...fields.map(f => f.key), 'notes', 'createdAt'];
   const labels = [...fields.map(f => t(f.labelKey)), t('notes'), 'Created At'];
 
-  fetch(url, {
-    method: 'POST',
-    body: JSON.stringify({
-      sheetName: t('mod_' + module),
-      keys,
-      labels,
-      records,
-    }),
-    mode: 'no-cors',
-  }).catch(() => {});
+  postToSheets({
+    sheetName: t('mod_' + module),
+    keys,
+    labels,
+    records,
+  });
 }
 
 
@@ -222,17 +316,13 @@ function syncInventorySnapshot(triggeredBy) {
     ...DRINK_TYPES.map(dt => t(dt)),
   ];
 
-  fetch(url, {
-    method: 'POST',
-    body: JSON.stringify({
-      sheetName: t('mod_inventory'),
-      action: 'append',
-      keys,
-      labels,
-      records: [record],
-    }),
-    mode: 'no-cors',
-  }).catch(() => {});
+  postToSheets({
+    sheetName: t('mod_inventory'),
+    action: 'append',
+    keys,
+    labels,
+    records: [record],
+  });
 }
 
 // ---- Manager Password Modal (required for any delete action) ----
@@ -1909,7 +1999,22 @@ function renderBackoffice(container) {
          style="display:flex;align-items:center;gap:8px;margin-bottom:12px;text-decoration:none;">
         <i data-feather="external-link"></i> ${t('viewInventorySheet')}
       </a>
-      <div style="display:flex;gap:10px;margin-top:8px;">
+      <div class="form-group" style="margin-bottom:8px;">
+        <label class="form-label" style="font-size:12px;">${t('sheetsUrl')}</label>
+        <input type="url" id="sheets-url-input" class="form-input" style="font-size:12px;"
+          placeholder="${t('sheetsUrlPlaceholder')}"
+          value="${getSheetsUrl()}">
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${t('sheetsUrlHint')}</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <button class="btn btn-primary" id="btn-save-sheets-url" style="flex:1;font-size:13px;">
+          <i data-feather="save"></i> ${t('sheetsSave')}
+        </button>
+        <button class="btn btn-secondary" id="btn-test-connection" style="flex:1;font-size:13px;">
+          <i data-feather="wifi"></i> ${t('sheetsTestConnection')}
+        </button>
+      </div>
+      <div style="display:flex;gap:10px;">
         <button class="btn btn-secondary" id="btn-sync-all-sheets" style="flex:1;">
           <i data-feather="refresh-cw"></i> ${t('sheetsSyncAll')}
         </button>
@@ -1943,13 +2048,77 @@ function renderBackoffice(container) {
     });
   }
 
+  // Save GAS URL
+  const saveUrlBtn = container.querySelector('#btn-save-sheets-url');
+  if (saveUrlBtn) {
+    saveUrlBtn.addEventListener('click', () => {
+      const urlInput = container.querySelector('#sheets-url-input');
+      const val = (urlInput?.value || '').trim();
+      if (val) {
+        localStorage.setItem('factory_sheetsUrl', val);
+        showToast(t('sheetsSaved'));
+      }
+    });
+  }
+
+  // Test connection to GAS
+  const testBtn = container.querySelector('#btn-test-connection');
+  if (testBtn) {
+    testBtn.addEventListener('click', async () => {
+      const urlInput = container.querySelector('#sheets-url-input');
+      const url = (urlInput?.value || '').trim() || getSheetsUrl();
+      if (!url) { showToast(t('sheetsUrlPlaceholder')); return; }
+
+      testBtn.disabled = true;
+      const origHtml = testBtn.innerHTML;
+      testBtn.innerHTML = '<i data-feather="loader"></i>';
+      if (typeof feather !== 'undefined') feather.replace();
+
+      try {
+        const resp = await fetch(url, { signal: AbortSignal.timeout(8000) });
+        const data = await resp.json();
+        if (data.status === 'ok' || data.message) {
+          showToast('Connected ✓');
+        } else {
+          showToast('Unexpected response');
+        }
+      } catch (err) {
+        showToast(t('syncFailed') + ': ' + err.message);
+      } finally {
+        testBtn.disabled = false;
+        testBtn.innerHTML = origHtml;
+        if (typeof feather !== 'undefined') feather.replace();
+      }
+    });
+  }
+
   // Bind Sync All — pushes every module to Sheets at once
   const syncAllBtn = container.querySelector('#btn-sync-all-sheets');
   if (syncAllBtn) {
-    syncAllBtn.addEventListener('click', () => {
+    syncAllBtn.addEventListener('click', async () => {
+      syncAllBtn.disabled = true;
+      const origHtml = syncAllBtn.innerHTML;
+      syncAllBtn.innerHTML = `<i data-feather="loader"></i> ${t('syncInProgress')}`;
+      if (typeof feather !== 'undefined') feather.replace();
+
       ['rawMaterials', 'dateReceiving', 'fermentation', 'distillation1', 'distillation2', 'bottling']
         .forEach(m => syncModuleToSheets(m));
-      showToast(t('sheetsSyncAll') + ' ✓');
+      syncInventorySnapshot('manual');
+
+      // Wait for GAS to process, then verify via GET
+      await new Promise(r => setTimeout(r, 4000));
+      const check = await verifySyncStatus(t('mod_bottling'));
+      console.log('[sync] Sync All verification:', check);
+
+      syncAllBtn.disabled = false;
+      syncAllBtn.innerHTML = origHtml;
+      if (typeof feather !== 'undefined') feather.replace();
+
+      if (check.verified && check.exists) {
+        showToast(t('syncSuccess'));
+      } else {
+        showToast(t('sheetsSyncAll') + ' ✓');
+      }
     });
   }
 
@@ -2121,7 +2290,7 @@ function renderUserForm(container) {
 
 // Fire-and-forget notification to GAS webhook so admins get an email
 function notifyAdminsOfRequest(request) {
-  const url = SHEETS_SYNC_URL;
+  const url = getSheetsUrl();
   if (!url) return;
   fetch(url, {
     method: 'POST',

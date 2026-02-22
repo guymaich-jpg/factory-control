@@ -146,7 +146,11 @@ const I18N = {
     sheetsUrlHint: "Paste your Google Apps Script URL to sync all modules to Google Sheets automatically.",
     sheetsSave: "Save URL",
     sheetsSaved: "Google Sheets URL saved ✓",
+    sheetsTestConnection: "Test Connection",
     sheetsSyncAll: "Sync All Now",
+    syncInProgress: "Syncing...",
+    syncSuccess: "Synced ✓",
+    syncFailed: "Sync failed — check connection",
 
     // ---------- Raw Materials ----------
     rm_supplier: "Supplier",
@@ -405,7 +409,11 @@ const I18N = {
     sheetsUrlHint: "הדבק את כתובת ה-URL כדי לסנכרן את כל הנתונים ל-Google Sheets באופן אוטומטי.",
     sheetsSave: "שמור כתובת",
     sheetsSaved: "כתובת Google Sheets נשמרה ✓",
+    sheetsTestConnection: "בדוק חיבור",
     sheetsSyncAll: "סנכרן הכל עכשיו",
+    syncInProgress: "מסנכרן...",
+    syncSuccess: "סונכרן ✓",
+    syncFailed: "הסנכרון נכשל — בדוק חיבור",
 
     backoffice: "ניהול מערכת",
     userManagement: "ניהול משתמשים",
@@ -757,7 +765,11 @@ const I18N = {
     sheetsUrlHint: "วาง URL เพื่อซิงค์ข้อมูลทั้งหมดไปยัง Google Sheets โดยอัตโนมัติ",
     sheetsSave: "บันทึก URL",
     sheetsSaved: "บันทึก URL Google Sheets แล้ว ✓",
+    sheetsTestConnection: "ทดสอบการเชื่อมต่อ",
     sheetsSyncAll: "ซิงค์ทั้งหมดตอนนี้",
+    syncInProgress: "กำลังซิงค์...",
+    syncSuccess: "ซิงค์สำเร็จ ✓",
+    syncFailed: "ซิงค์ล้มเหลว — ตรวจสอบการเชื่อมต่อ",
 
     // ---------- Raw Materials ----------
     rm_supplier: "ผู้จำหน่าย",

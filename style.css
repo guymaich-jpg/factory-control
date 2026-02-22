@@ -1169,6 +1169,59 @@ html[dir="rtl"] .toggle-switch input:checked + .toggle-slider::before {
 }
 
 /* ============================================================
+   SYNC INDICATOR
+   ============================================================ */
+.sync-indicator {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  z-index: 1999;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 1;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+  backdrop-filter: blur(6px);
+}
+
+[dir="rtl"] .sync-indicator {
+  right: auto;
+  left: 12px;
+}
+
+.sync-indicator.sync-fade {
+  opacity: 0;
+}
+
+.sync-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.sync-dot.pulse {
+  background: #60a5fa;
+  animation: syncPulse 1s ease-in-out infinite;
+}
+
+.sync-dot.green { background: #22c55e; }
+.sync-dot.red   { background: #ef4444; }
+
+@keyframes syncPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.25; }
+}
+
+/* ============================================================
    PERMISSION OVERLAY & EMPTY STATE
    ============================================================ */
 .perm-overlay {
