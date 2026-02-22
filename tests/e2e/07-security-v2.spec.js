@@ -3,7 +3,7 @@
 // backoffice access control, and input sanitization
 // ============================================================
 const { test, expect } = require('@playwright/test');
-const { freshApp, loginAsWorker, loginAsManager } = require('./helpers');
+const { freshApp, loginAsWorker, loginAsManager, seedTestUsers, TEST_MANAGER } = require('./helpers');
 
 // ============================================================
 // Manager Password Modal
@@ -362,8 +362,9 @@ test.describe('Security: Input sanitization', () => {
 
   test('password is not stored in session object', async ({ page }) => {
     await freshApp(page);
-    await page.fill('#login-user', 'manager');
-    await page.fill('#login-pass', 'manager123');
+    await seedTestUsers(page);
+    await page.fill('#login-user', TEST_MANAGER.email);
+    await page.fill('#login-pass', TEST_MANAGER.password);
     await page.click('#login-btn');
 
     const session = await page.evaluate(() =>

@@ -4,7 +4,7 @@ const { expect } = require('@playwright/test');
 // Test users — seeded into localStorage for manager/worker tests
 const TEST_MANAGER = {
   username: 'testmanager',
-  password: 'Manager123',
+  password: 'manager123',
   email: 'testmanager@test.com',
   role: 'manager',
   name: 'Test Manager',
