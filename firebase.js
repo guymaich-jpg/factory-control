@@ -258,8 +258,8 @@ async function fbDeleteUser(username) {
 //   4. Paste the Client ID below and set GOOGLE_SSO_ENABLED = true
 // ============================================================
 
-const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
-const GOOGLE_SSO_ENABLED = false;
+const GOOGLE_CLIENT_ID = '564527226666-j3pc4v60q4evuha2peg19jq07sbk3cn0.apps.googleusercontent.com';
+const GOOGLE_SSO_ENABLED = true;
 
 let _gsiReady = false;
 let _gsiCallback = null;
