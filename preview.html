@@ -1197,6 +1197,59 @@ html[dir="rtl"] .toggle-switch input:checked + .toggle-slider::before {
 }
 
 /* ============================================================
+   SYNC INDICATOR
+   ============================================================ */
+.sync-indicator {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  z-index: 1999;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 1;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+  backdrop-filter: blur(6px);
+}
+
+[dir="rtl"] .sync-indicator {
+  right: auto;
+  left: 12px;
+}
+
+.sync-indicator.sync-fade {
+  opacity: 0;
+}
+
+.sync-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.sync-dot.pulse {
+  background: #60a5fa;
+  animation: syncPulse 1s ease-in-out infinite;
+}
+
+.sync-dot.green { background: #22c55e; }
+.sync-dot.red   { background: #ef4444; }
+
+@keyframes syncPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.25; }
+}
+
+/* ============================================================
    PERMISSION OVERLAY & EMPTY STATE
    ============================================================ */
 .perm-overlay {
@@ -2200,7 +2253,11 @@ const I18N = {
     sheetsUrlHint: "Paste your Google Apps Script URL to sync all modules to Google Sheets automatically.",
     sheetsSave: "Save URL",
     sheetsSaved: "Google Sheets URL saved ✓",
+    sheetsTestConnection: "Test Connection",
     sheetsSyncAll: "Sync All Now",
+    syncInProgress: "Syncing...",
+    syncSuccess: "Synced ✓",
+    syncFailed: "Sync failed — check connection",
 
     // ---------- Raw Materials ----------
     rm_supplier: "Supplier",
@@ -2459,7 +2516,11 @@ const I18N = {
     sheetsUrlHint: "הדבק את כתובת ה-URL כדי לסנכרן את כל הנתונים ל-Google Sheets באופן אוטומטי.",
     sheetsSave: "שמור כתובת",
     sheetsSaved: "כתובת Google Sheets נשמרה ✓",
+    sheetsTestConnection: "בדוק חיבור",
     sheetsSyncAll: "סנכרן הכל עכשיו",
+    syncInProgress: "מסנכרן...",
+    syncSuccess: "סונכרן ✓",
+    syncFailed: "הסנכרון נכשל — בדוק חיבור",
 
     backoffice: "ניהול מערכת",
     userManagement: "ניהול משתמשים",
@@ -2811,7 +2872,11 @@ const I18N = {
     sheetsUrlHint: "วาง URL เพื่อซิงค์ข้อมูลทั้งหมดไปยัง Google Sheets โดยอัตโนมัติ",
     sheetsSave: "บันทึก URL",
     sheetsSaved: "บันทึก URL Google Sheets แล้ว ✓",
+    sheetsTestConnection: "ทดสอบการเชื่อมต่อ",
     sheetsSyncAll: "ซิงค์ทั้งหมดตอนนี้",
+    syncInProgress: "กำลังซิงค์...",
+    syncSuccess: "ซิงค์สำเร็จ ✓",
+    syncFailed: "ซิงค์ล้มเหลว — ตรวจสอบการเชื่อมต่อ",
 
     // ---------- Raw Materials ----------
     rm_supplier: "ผู้จำหน่าย",
@@ -3623,8 +3688,101 @@ function showToast(msg) {
 // ============================================================
 // GOOGLE SHEETS SYNC
 // ============================================================
-const SHEETS_SYNC_URL = 'https://script.google.com/macros/s/AKfycbw3dL8YRQ63TFJ4UzIAD5dUVVEJ4RX6z5dynQHU5thdrmmrjaRcS7VkQgSjqcECboha/exec';
+const SHEETS_SYNC_URL = 'https://script.google.com/macros/s/AKfycbyMJ9pWds3hN3Oup_X-gwyDq0mX_CECdldtXcGXSn8-RsRDC6JNLhhPLoDSPXvjVK3O/exec';
 const INVENTORY_SHEET_URL = 'https://docs.google.com/spreadsheets/d/14rYu6QgRD2r4X4ZjOs45Rqtl4p0XOPvJfcs5BpY54EE/edit?gid=1634965365#gid=1634965365';
+
+// Sync state for the visual indicator
+let _syncQueue = 0;
+
+// ── Sync infrastructure ──────────────────────────────────────
+
+// Sends a POST to GAS. Always fire-and-forget (no-cors), with 1 retry and console logging.
+async function postToSheets(payload) {
+  const url = SHEETS_SYNC_URL;
+  if (!url) {
+    console.warn('[sync] No GAS URL configured — skipping sync');
+    return;
+  }
+
+  _syncQueue++;
+  updateSyncIndicator('syncing');
+
+  const attempt = async (n) => {
+    try {
+      console.log(`[sync] POST attempt ${n + 1}:`, payload.sheetName, payload.action || 'replace', `(${(payload.records || []).length} records)`);
+      await fetch(url, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        mode: 'no-cors',
+      });
+      console.log(`[sync] POST sent:`, payload.sheetName);
+      return true;
+    } catch (err) {
+      console.error(`[sync] POST failed (attempt ${n + 1}):`, err.message);
+      if (n < 1) {
+        console.log('[sync] Retrying in 2s...');
+        await new Promise(r => setTimeout(r, 2000));
+        return attempt(n + 1);
+      }
+      return false;
+    }
+  };
+
+  const sent = await attempt(0);
+  _syncQueue--;
+
+  if (!sent) {
+    updateSyncIndicator(_syncQueue > 0 ? 'syncing' : 'error');
+    showToast(t('syncFailed'));
+    return;
+  }
+
+  updateSyncIndicator(_syncQueue > 0 ? 'syncing' : 'success');
+}
+
+// Verifies sync via GET request (GAS doGet supports CORS — we can read the response)
+async function verifySyncStatus(sheetName) {
+  const url = SHEETS_SYNC_URL;
+  if (!url) return { verified: false, error: 'no-url' };
+  try {
+    const resp = await fetch(`${url}?action=syncStatus&sheet=${encodeURIComponent(sheetName)}`);
+    if (!resp.ok) return { verified: false, error: 'http-' + resp.status };
+    const data = await resp.json();
+    return { verified: true, ...data };
+  } catch (err) {
+    console.warn('[sync] Verification failed for', sheetName, err.message);
+    return { verified: false, error: err.message };
+  }
+}
+
+// Shows a small persistent pill in the corner: Syncing / Synced / Sync failed
+function updateSyncIndicator(state) {
+  let indicator = document.querySelector('.sync-indicator');
+  if (!indicator) {
+    indicator = document.createElement('div');
+    indicator.className = 'sync-indicator';
+    document.body.appendChild(indicator);
+  }
+
+  indicator.className = 'sync-indicator sync-' + state;
+
+  switch (state) {
+    case 'syncing':
+      indicator.innerHTML = '<span class="sync-dot pulse"></span>' + t('syncInProgress');
+      break;
+    case 'success':
+      indicator.innerHTML = '<span class="sync-dot green"></span>' + t('syncSuccess');
+      setTimeout(() => { if (indicator.classList.contains('sync-success')) indicator.classList.add('sync-fade'); }, 4000);
+      break;
+    case 'error':
+      indicator.innerHTML = '<span class="sync-dot red"></span>' + t('syncFailed');
+      break;
+    default:
+      indicator.classList.add('sync-fade');
+  }
+}
+
+// ── Module sync ───────────────────────────────────────────────
 
 function syncModuleToSheets(module) {
   const url = SHEETS_SYNC_URL;
@@ -3715,16 +3873,12 @@ function syncModuleToSheets(module) {
   const keys = [...fields.map(f => f.key), 'notes', 'createdAt'];
   const labels = [...fields.map(f => t(f.labelKey)), t('notes'), 'Created At'];
 
-  fetch(url, {
-    method: 'POST',
-    body: JSON.stringify({
-      sheetName: t('mod_' + module),
-      keys,
-      labels,
-      records,
-    }),
-    mode: 'no-cors',
-  }).catch(() => {});
+  postToSheets({
+    sheetName: t('mod_' + module),
+    keys,
+    labels,
+    records,
+  });
 }
 
 
@@ -3800,17 +3954,13 @@ function syncInventorySnapshot(triggeredBy) {
     ...DRINK_TYPES.map(dt => t(dt)),
   ];
 
-  fetch(url, {
-    method: 'POST',
-    body: JSON.stringify({
-      sheetName: t('mod_inventory'),
-      action: 'append',
-      keys,
-      labels,
-      records: [record],
-    }),
-    mode: 'no-cors',
-  }).catch(() => {});
+  postToSheets({
+    sheetName: t('mod_inventory'),
+    action: 'append',
+    keys,
+    labels,
+    records: [record],
+  });
 }
 
 // ---- Manager Password Modal (required for any delete action) ----
@@ -5487,7 +5637,7 @@ function renderBackoffice(container) {
          style="display:flex;align-items:center;gap:8px;margin-bottom:12px;text-decoration:none;">
         <i data-feather="external-link"></i> ${t('viewInventorySheet')}
       </a>
-      <div style="display:flex;gap:10px;margin-top:8px;">
+      <div style="display:flex;gap:10px;">
         <button class="btn btn-secondary" id="btn-sync-all-sheets" style="flex:1;">
           <i data-feather="refresh-cw"></i> ${t('sheetsSyncAll')}
         </button>
@@ -5524,10 +5674,30 @@ function renderBackoffice(container) {
   // Bind Sync All — pushes every module to Sheets at once
   const syncAllBtn = container.querySelector('#btn-sync-all-sheets');
   if (syncAllBtn) {
-    syncAllBtn.addEventListener('click', () => {
+    syncAllBtn.addEventListener('click', async () => {
+      syncAllBtn.disabled = true;
+      const origHtml = syncAllBtn.innerHTML;
+      syncAllBtn.innerHTML = `<i data-feather="loader"></i> ${t('syncInProgress')}`;
+      if (typeof feather !== 'undefined') feather.replace();
+
       ['rawMaterials', 'dateReceiving', 'fermentation', 'distillation1', 'distillation2', 'bottling']
         .forEach(m => syncModuleToSheets(m));
-      showToast(t('sheetsSyncAll') + ' ✓');
+      syncInventorySnapshot('manual');
+
+      // Wait for GAS to process, then verify via GET
+      await new Promise(r => setTimeout(r, 4000));
+      const check = await verifySyncStatus(t('mod_bottling'));
+      console.log('[sync] Sync All verification:', check);
+
+      syncAllBtn.disabled = false;
+      syncAllBtn.innerHTML = origHtml;
+      if (typeof feather !== 'undefined') feather.replace();
+
+      if (check.verified && check.exists) {
+        showToast(t('syncSuccess'));
+      } else {
+        showToast(t('sheetsSyncAll') + ' ✓');
+      }
     });
   }
 
