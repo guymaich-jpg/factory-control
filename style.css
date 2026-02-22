@@ -1,88 +1,89 @@
 /* ============================================================
-   Factory Control — Apple-Inspired Design System
-   Light mode by default • Dark mode via [data-theme="dark"]
+   Factory Control — Arava Distillery Design System
+   Cream/light by default • Forest-green dark mode
    ============================================================ */
 
-/* ── Color Tokens ── */
+/* ── Color Tokens — Arava Distillery Brand ── */
 :root {
-  /* Backgrounds */
-  --bg:          #F2F2F7;
-  --bg-card:     #FFFFFF;
-  --bg-input:    #FFFFFF;
-  --bg-surface:  #F2F2F7;
+  /* Backgrounds — warm cream palette */
+  --bg:          #EFEFEC;
+  --bg-card:     #FAFAF8;
+  --bg-input:    #FAFAF8;
+  --bg-surface:  #E8E8E4;
   --bg-elevated: #FFFFFF;
 
-  /* Text */
-  --text:           #000000;
-  --text-secondary: rgba(60, 60, 67, 0.72);
-  --text-muted:     rgba(60, 60, 67, 0.40);
+  /* Text — near-black brand */
+  --text:           #252525;
+  --text-secondary: rgba(37, 37, 37, 0.65);
+  --text-muted:     rgba(37, 37, 37, 0.38);
 
-  /* Accent — iOS Blue */
-  --accent:      #007AFF;
-  --accent-hover:#0062D6;
-  --accent-bg:   rgba(0, 122, 255, 0.10);
-  --accent-bg2:  rgba(0, 122, 255, 0.16);
+  /* Accent — forest green */
+  --accent:      #2C332F;
+  --accent-hover:#1E2420;
+  --accent-bg:   rgba(44, 51, 47, 0.08);
+  --accent-bg2:  rgba(44, 51, 47, 0.14);
 
-  /* Semantic */
-  --success:     #34C759;
-  --success-bg:  rgba(52, 199, 89, 0.12);
-  --warning:     #FF9500;
-  --warning-bg:  rgba(255, 149, 0, 0.12);
-  --danger:      #FF3B30;
-  --danger-bg:   rgba(255, 59, 48, 0.12);
+  /* Semantic — earthy palette */
+  --success:     #3F5147;
+  --success-bg:  rgba(63, 81, 71, 0.12);
+  --warning:     #8B6914;
+  --warning-bg:  rgba(139, 105, 20, 0.12);
+  --danger:      #8B2E2E;
+  --danger-bg:   rgba(139, 46, 46, 0.12);
 
   /* Borders */
-  --border:     rgba(60, 60, 67, 0.18);
-  --separator:  rgba(60, 60, 67, 0.10);
+  --border:     rgba(37, 37, 37, 0.14);
+  --separator:  rgba(37, 37, 37, 0.08);
 
-  /* Radii */
-  --radius:    16px;
-  --radius-sm: 12px;
-  --radius-xs: 8px;
+  /* Radii — sharp, brand-aligned */
+  --radius:    8px;
+  --radius-sm: 6px;
+  --radius-xs: 4px;
 
-  /* Shadows */
-  --shadow:    0 2px 12px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.10), 0 2px 8px rgba(0, 0, 0, 0.06);
+  /* Shadows — warm toned */
+  --shadow:    0 2px 12px rgba(37, 37, 37, 0.06), 0 1px 3px rgba(37, 37, 37, 0.04);
+  --shadow-lg: 0 8px 32px rgba(37, 37, 37, 0.10), 0 2px 8px rgba(37, 37, 37, 0.04);
 
-  /* Module accent colors */
-  --color-receiving:   #5856D6;
-  --color-dates:       #FF9500;
-  --color-fermentation:#34C759;
-  --color-dist1:       #007AFF;
-  --color-dist2:       #AF52DE;
-  --color-bottling:    #FF2D55;
-  --color-inventory:   #32ADE6;
+  /* Module accent colors — earthy / terroir palette */
+  --color-receiving:    #3F5147;   /* sage green  — raw materials */
+  --color-dates:        #8B6914;   /* warm amber  — date receiving */
+  --color-fermentation: #2C332F;   /* forest green — fermentation */
+  --color-dist1:        #5C6E64;   /* medium sage  — distillation 1 */
+  --color-dist2:        #7D4E24;   /* warm brown   — distillation 2 */
+  --color-bottling:     #4A3728;   /* dark wood    — bottling */
+  --color-inventory:    #3D5A52;   /* teal-sage    — inventory */
 }
 
-/* ── Dark Mode ── */
+/* ── Dark Mode — Arava Forest Green ── */
 [data-theme="dark"] {
-  --bg:          #000000;
-  --bg-card:     #1C1C1E;
-  --bg-input:    #2C2C2E;
-  --bg-surface:  #1C1C1E;
-  --bg-elevated: #2C2C2E;
+  --bg:          #1A1E1B;
+  --bg-card:     #252925;
+  --bg-input:    #2C332F;
+  --bg-surface:  #1E2420;
+  --bg-elevated: #2C332F;
 
-  --text:           #FFFFFF;
-  --text-secondary: rgba(235, 235, 245, 0.60);
-  --text-muted:     rgba(235, 235, 245, 0.30);
+  --text:           #EFEFEC;
+  --text-secondary: rgba(239, 239, 236, 0.65);
+  --text-muted:     rgba(239, 239, 236, 0.35);
 
-  --accent:      #0A84FF;
-  --accent-hover:#0870D8;
-  --accent-bg:   rgba(10, 132, 255, 0.15);
-  --accent-bg2:  rgba(10, 132, 255, 0.22);
+  /* Accent: muted sage — legible on dark forest green */
+  --accent:      #8BAF96;
+  --accent-hover:#A0C4AF;
+  --accent-bg:   rgba(139, 175, 150, 0.12);
+  --accent-bg2:  rgba(139, 175, 150, 0.20);
 
-  --success:     #30D158;
-  --success-bg:  rgba(48, 209, 88, 0.15);
-  --warning:     #FF9F0A;
-  --warning-bg:  rgba(255, 159, 10, 0.15);
-  --danger:      #FF453A;
-  --danger-bg:   rgba(255, 69, 58, 0.15);
+  --success:     #6E9A7D;
+  --success-bg:  rgba(110, 154, 125, 0.15);
+  --warning:     #C4A040;
+  --warning-bg:  rgba(196, 160, 64, 0.15);
+  --danger:      #C47070;
+  --danger-bg:   rgba(196, 112, 112, 0.15);
 
-  --border:    rgba(84, 84, 88, 0.55);
-  --separator: rgba(84, 84, 88, 0.30);
+  --border:    rgba(239, 239, 236, 0.12);
+  --separator: rgba(239, 239, 236, 0.07);
 
-  --shadow:    0 2px 12px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.30);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.60), 0 2px 8px rgba(0, 0, 0, 0.40);
+  --shadow:    0 2px 12px rgba(0, 0, 0, 0.40), 0 1px 3px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
 /* ── Reset ── */
@@ -96,7 +97,7 @@ html,
 body {
   height: 100%;
   height: 100dvh;
-  font-family: 'Inter', -apple-system, 'Helvetica Neue', sans-serif;
+  font-family: 'Quattrocento Sans', 'Inter', -apple-system, sans-serif;
   background: var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
@@ -104,11 +105,27 @@ body {
   transition: background 0.25s ease, color 0.25s ease;
 }
 
+/* Thai — Trirong is a Thai-compatible serif; use it for body too */
 html[lang="th"] body {
-  font-family: 'Noto Sans Thai', 'Inter', sans-serif;
+  font-family: 'Trirong', 'Noto Sans Thai', sans-serif;
 }
+
+/* Hebrew — Quattrocento Sans has no Hebrew glyphs; fall back to Inter */
 html[lang="he"] body {
   font-family: 'Inter', -apple-system, sans-serif;
+}
+
+/* Serif headings — Trirong for all languages */
+.header-title,
+.welcome-card h2,
+.section-title,
+.login-screen h1,
+.module-card .mc-title,
+.detail-card h3,
+.mpd-title,
+h3 {
+  font-family: 'Trirong', Georgia, serif;
+  letter-spacing: 0;
 }
 
 /* RTL */
@@ -166,16 +183,18 @@ html[dir="rtl"] .toggle-switch input:checked + .toggle-slider::before {
 .login-logo {
   width: 88px;
   height: 88px;
-  background: var(--accent);
-  border-radius: 26px;
+  background: #2C332F;
+  border-radius: 14px;          /* sharper — brand aligned */
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 28px;
-  font-size: 34px;
+  font-size: 30px;
   font-weight: 700;
-  color: #fff;
-  box-shadow: 0 8px 24px rgba(0, 122, 255, 0.35);
+  font-family: 'Trirong', Georgia, serif;
+  color: #EFEFEC;
+  letter-spacing: 1px;
+  box-shadow: 0 8px 24px rgba(44, 51, 47, 0.30);
 }
 
 .login-screen h1 {
@@ -218,6 +237,7 @@ html[dir="rtl"] .toggle-switch input:checked + .toggle-slider::before {
 .login-form input:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-bg);
+  outline: none;
 }
 
 .login-form input::placeholder { color: var(--text-muted); }
@@ -225,17 +245,18 @@ html[dir="rtl"] .toggle-switch input:checked + .toggle-slider::before {
 .login-btn {
   width: 100%;
   padding: 16px;
-  background: var(--accent);
-  color: #fff;
+  background: #2C332F;
+  color: #EFEFEC;
   border: none;
   border-radius: var(--radius-sm);
   font-size: 16px;
   font-weight: 600;
+  font-family: 'Quattrocento Sans', 'Inter', sans-serif;
   cursor: pointer;
   margin-top: 10px;
   transition: opacity 0.2s, transform 0.1s;
-  letter-spacing: -0.2px;
-  box-shadow: 0 4px 16px rgba(0, 122, 255, 0.30);
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 10px rgba(44, 51, 47, 0.25);
 }
 
 .login-btn:active  { opacity: 0.8; transform: scale(0.98); }
@@ -324,7 +345,7 @@ html[dir="rtl"] .toggle-switch input:checked + .toggle-slider::before {
 }
 
 [data-theme="dark"] .app-header {
-  background: rgba(28, 28, 30, 0.92);
+  background: rgba(37, 41, 37, 0.94); /* #252925 at 94% */
 }
 
 .header-left {
@@ -420,7 +441,7 @@ html[dir="rtl"] .toggle-switch input:checked + .toggle-slider::before {
 }
 
 [data-theme="dark"] .bottom-nav {
-  background: rgba(28, 28, 30, 0.92);
+  background: rgba(37, 41, 37, 0.94); /* #252925 at 94% */
 }
 
 .nav-item {
@@ -464,12 +485,12 @@ html[dir="rtl"] .toggle-switch input:checked + .toggle-slider::before {
    DASHBOARD
    ============================================================ */
 .welcome-card {
-  background: var(--accent);
+  background: #2C332F;  /* forest green — fixed, not accent, so it stays dark even in light mode */
   border-radius: var(--radius);
   padding: 22px 20px;
   margin-bottom: 20px;
-  color: #fff;
-  box-shadow: 0 6px 24px rgba(0, 122, 255, 0.28);
+  color: #EFEFEC;
+  box-shadow: 0 6px 24px rgba(44, 51, 47, 0.30);
   position: relative;
   overflow: hidden;
 }
@@ -481,9 +502,12 @@ html[dir="rtl"] .toggle-switch input:checked + .toggle-slider::before {
   right: -30px;
   width: 120px;
   height: 120px;
-  background: rgba(255,255,255,0.08);
+  background: rgba(239, 239, 236, 0.06);
   border-radius: 50%;
 }
+
+.welcome-card h2 { color: #EFEFEC; }
+.welcome-card p  { color: rgba(239, 239, 236, 0.70); }
 
 .welcome-card h2 {
   font-size: 20px;
@@ -818,24 +842,29 @@ html[dir="rtl"] .toggle-switch input:checked + .toggle-slider::before {
 
 .btn-primary {
   background: var(--accent);
-  color: #fff;
-  box-shadow: 0 4px 14px rgba(0, 122, 255, 0.28);
+  color: #EFEFEC;
+  box-shadow: 0 2px 8px rgba(37, 37, 37, 0.18);
+}
+
+[data-theme="dark"] .btn-primary {
+  color: #1A1E1B;  /* dark text on light sage button in dark mode */
 }
 
 .btn-secondary {
   background: var(--accent-bg);
   color: var(--accent);
-  border: none;
+  border: 1px solid var(--border);
 }
 
 [data-theme="dark"] .btn-secondary {
   background: var(--accent-bg2);
+  border-color: var(--separator);
 }
 
 .btn-danger {
   background: var(--danger);
   color: #fff;
-  box-shadow: 0 4px 14px rgba(255, 59, 48, 0.22);
+  box-shadow: 0 2px 8px rgba(37, 37, 37, 0.18);
 }
 
 .btn-success {
@@ -1067,22 +1096,22 @@ html[dir="rtl"] .toggle-switch input:checked + .toggle-slider::before {
   right: 18px;
   width: 54px;
   height: 54px;
-  border-radius: 27px;
+  border-radius: 8px;           /* sharp — brand aligned */
   background: var(--accent);
-  color: #fff;
+  color: #EFEFEC;
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 20px rgba(0, 122, 255, 0.40);
+  box-shadow: 0 4px 16px rgba(37, 37, 37, 0.22);
   z-index: 50;
   transition: transform 0.15s, box-shadow 0.15s;
 }
 
 .fab-add:active {
   transform: scale(0.90);
-  box-shadow: 0 2px 10px rgba(0, 122, 255, 0.30);
+  box-shadow: 0 2px 8px rgba(37, 37, 37, 0.18);
 }
 
 .fab-add svg { width: 24px; height: 24px; }
@@ -1117,8 +1146,12 @@ html[dir="rtl"] .toggle-switch input:checked + .toggle-slider::before {
 
 .tab-btn.active {
   background: var(--accent);
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.25);
+  color: #EFEFEC;
+  box-shadow: 0 2px 6px rgba(37, 37, 37, 0.18);
+}
+
+[data-theme="dark"] .tab-btn.active {
+  color: #1A1E1B;
 }
 
 /* ============================================================
