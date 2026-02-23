@@ -10,9 +10,8 @@
     <meta name="theme-color" content="#1A1E1B" media="(prefers-color-scheme: dark)">
     <meta name="color-scheme" content="light dark">
     <meta name="description" content="Arava Distillery — Production Control System">
-    <!-- Security headers (BUG-013: CSP, BUG-046: X-Frame-Options) -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://www.gstatic.com 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src https://fonts.gstatic.com; connect-src 'self' https://script.google.com https://*.firebaseio.com https://*.googleapis.com; img-src 'self' data: blob:; frame-ancestors 'none';">
-    <meta http-equiv="X-Frame-Options" content="DENY">
+    <!-- Security: CSP via meta tag (note: frame-ancestors requires HTTP header, not supported in meta tags) -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://www.gstatic.com 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src https://fonts.gstatic.com; connect-src 'self' https://script.google.com https://*.firebaseio.com https://*.googleapis.com; img-src 'self' data: blob:;">
     <link rel="manifest" href="manifest.json">
     <title>Arava Distillery · ייצור</title>
     <script>
@@ -37,8 +36,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Trirong:ital,wght@0,400;0,600;0,700;1,400&family=Quattrocento+Sans:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap"
         rel="stylesheet">
-    <!-- BUG-014: Pin version and add crossorigin for future SRI -->
-    <script src="https://unpkg.com/feather-icons@4.29.2/dist/feather.min.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/feather-icons@4.29.2/dist/feather.min.js" integrity="sha384-qEqAs1VsN9WH2myXDbiP2wGGIttL9bMRZBKCl54ZnzpDlVqbYANP9vMaoT/wvQcf" crossorigin="anonymous"></script>
     <script src="firebase.js"></script>
     <script src="i18n.js"></script>
     <script src="auth.js"></script>

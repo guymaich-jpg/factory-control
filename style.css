@@ -284,12 +284,16 @@ html[dir="rtl"] .toggle-switch input:checked + .toggle-slider::before {
   color: var(--text);
   font-size: 16px;             /* 16px minimum — prevents iOS zoom */
   font-family: inherit;
-  outline: none;
   transition: border-color 0.2s;
 }
 
 .login-form input:focus {
   border-color: #2C332F;
+  outline: 2px solid #2C332F;
+  outline-offset: 1px;
+}
+
+.login-form input:focus:not(:focus-visible) {
   outline: none;
 }
 

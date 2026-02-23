@@ -44,10 +44,11 @@ function validateEmail(email) {
 const _loginAttempts = {};
 
 // The two owner accounts — login is by email + password
+// Passwords are pre-hashed to avoid exposing plaintext credentials in source
 const DEFAULT_USERS = [
   {
     username: 'guymaich',
-    password: hashPassword('Guy1234'),
+    password: 'hashed:13mry6n',
     role: 'admin',
     name: 'Guy Maich',
     nameHe: 'גיא מייך',
@@ -56,7 +57,7 @@ const DEFAULT_USERS = [
   },
   {
     username: 'yonatangarini',
-    password: hashPassword('Yon1234'),
+    password: 'hashed:111kxly',
     role: 'admin',
     name: 'Yonatan Garini',
     nameHe: 'יונתן גריני',
