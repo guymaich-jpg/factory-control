@@ -64,19 +64,34 @@ const VIEWPORTS = [
 ];
 
 /**
- * Navigate to the page reliably. We use 'commit' waitUntil (available in
- * modern Playwright) so we don't block on slow external resources (Google
- * Fonts, Firebase, etc.), and then manually wait for JS to render the DOM.
+ * Build proxy config from environment variables if available.
+ * The environment may use an authenticated HTTP proxy (user:pass@host:port).
+ * Playwright requires server, username, password as separate fields.
  */
-async function loadPage(page, timeout = 60000) {
+function getProxyConfig() {
+  const proxyEnv = process.env.HTTPS_PROXY || process.env.HTTP_PROXY || process.env.https_proxy || process.env.http_proxy;
+  if (!proxyEnv) return undefined;
   try {
-    await page.goto(TARGET_URL, { waitUntil: 'commit', timeout });
-  } catch (err) {
-    // If 'commit' isn't supported, fall back to load
-    await page.goto(TARGET_URL, { timeout });
+    const url = new URL(proxyEnv);
+    return {
+      server: `${url.protocol}//${url.hostname}:${url.port}`,
+      username: url.username || undefined,
+      password: url.password || undefined,
+    };
+  } catch {
+    return { server: proxyEnv };
   }
+}
+
+/**
+ * Navigate to the page reliably. Uses domcontentloaded to avoid blocking
+ * on slow external resources (Google Fonts, Firebase, etc.), then waits
+ * for JS to render the SPA DOM.
+ */
+async function loadPage(page, timeout = 45000) {
+  await page.goto(TARGET_URL, { waitUntil: 'domcontentloaded', timeout });
   // Let JS render (the app is SPA-style, builds DOM in script.js)
-  await page.waitForTimeout(4000);
+  await page.waitForTimeout(3000);
 }
 
 (async () => {
@@ -87,14 +102,15 @@ async function loadPage(page, timeout = 60000) {
   console.log('#  Date: ' + new Date().toISOString());
   console.log('#'.repeat(70));
 
+  const proxyConfig = getProxyConfig();
+  if (proxyConfig) {
+    console.log(`#  Proxy: ${proxyConfig.server} (authenticated: ${!!proxyConfig.username})`);
+  }
+
   const browser = await chromium.launch({
     headless: true,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-web-security',          // bypass CSP for testing
-      '--disable-features=IsolateOrigins',
-    ],
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    proxy: proxyConfig,
   });
 
   // ================================================================
