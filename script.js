@@ -3,10 +3,70 @@
 // ============================================================
 
 // ---------- State ----------
-let currentScreen = 'dashboard';
-let currentModule = null;   // which form/list is open
-let currentView = 'list';   // 'list' | 'form' | 'detail'
+// Restore navigation state from sessionStorage so refresh keeps the user's place
+let currentScreen = sessionStorage.getItem('fc_screen') || 'dashboard';
+let currentModule = sessionStorage.getItem('fc_module') || null;
+let currentView = sessionStorage.getItem('fc_view') || 'list';
 let editingRecord = null;
+
+// Persist navigation state on every change
+function _persistNavState() {
+  sessionStorage.setItem('fc_screen', currentScreen || 'dashboard');
+  if (currentModule) sessionStorage.setItem('fc_module', currentModule);
+  else sessionStorage.removeItem('fc_module');
+  sessionStorage.setItem('fc_view', currentView || 'list');
+}
+
+// --- Hash-based routing for browser back/forward ---
+let _suppressHashChange = false;
+
+function _syncHashToState() {
+  _suppressHashChange = true;
+  let hash = '#/';
+  if (currentModule) {
+    hash = '#/' + currentModule;
+    if (currentView && currentView !== 'list') hash += '/' + currentView;
+  } else if (currentScreen && currentScreen !== 'dashboard') {
+    hash = '#/' + currentScreen;
+  }
+  if (location.hash !== hash) {
+    history.pushState(null, '', hash);
+  }
+  _suppressHashChange = false;
+}
+
+function _restoreStateFromHash() {
+  const hash = location.hash.replace('#/', '').split('/');
+  const segment = hash[0] || '';
+  const view = hash[1] || 'list';
+
+  const moduleNames = ['rawMaterials', 'dateReceiving', 'fermentation', 'distillation1', 'distillation2', 'bottling', 'inventory'];
+  const screenNames = ['dashboard', 'backoffice', 'pendingRequests'];
+
+  if (moduleNames.includes(segment)) {
+    currentModule = segment;
+    currentScreen = segment === 'inventory' ? 'inventory' : segment;
+    currentView = (view === 'form' || view === 'detail') ? view : 'list';
+  } else if (screenNames.includes(segment)) {
+    currentScreen = segment;
+    currentModule = null;
+    currentView = 'list';
+  } else {
+    currentScreen = 'dashboard';
+    currentModule = null;
+    currentView = 'list';
+  }
+  // Can't restore editingRecord from URL, fall back to list
+  if ((currentView === 'form' || currentView === 'detail') && !editingRecord) {
+    currentView = 'list';
+  }
+}
+
+window.addEventListener('popstate', () => {
+  if (_suppressHashChange) return;
+  _restoreStateFromHash();
+  renderApp();
+});
 let signatureCanvas = null;
 let sigCtx = null;
 let sigDrawing = false;
@@ -42,6 +102,8 @@ function showToast(msg) {
   let toast = $('.toast');
   if (!toast) {
     toast = el('div', 'toast');
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
     document.body.appendChild(toast);
   }
   toast.textContent = msg;
@@ -391,15 +453,24 @@ function renderApp() {
   const session = getSession();
 
   if (!session) {
+    // Clear nav state when logged out
+    currentScreen = 'dashboard';
+    currentModule = null;
+    currentView = 'list';
+    _persistNavState();
     app.innerHTML = renderLogin();
     if (typeof feather !== 'undefined') feather.replace();
     bindLogin();
     return;
   }
 
+  // Persist current navigation state for refresh recovery
+  _persistNavState();
+  _syncHashToState();
+
   app.innerHTML = `
     ${renderHeader()}
-    <div class="screen-content" id="screen-content"></div>
+    <main class="screen-content" id="screen-content"></main>
     ${renderBottomNav()}
   `;
 
@@ -627,9 +698,9 @@ function renderHeader() {
   const roleClass = session.role === 'worker' ? 'worker' : '';
 
   return `
-    <div class="app-header">
+    <header class="app-header" role="banner">
       <div class="header-left">
-        ${showBack ? `<button class="header-back" id="header-back"><i data-feather="arrow-left"></i></button>` : ''}
+        ${showBack ? `<button class="header-back" id="header-back" aria-label="${t('back') || 'Back'}"><i data-feather="arrow-left"></i></button>` : ''}
         <span class="user-badge"><span class="role-dot ${roleClass}"></span>${esc(getUserDisplayName())}</span>
       </div>
       <span class="header-title">${esc(title)}</span>
@@ -637,21 +708,21 @@ function renderHeader() {
         ${session.role === 'admin' ? (() => {
           const pending = getPendingRequests().length;
           return pending > 0
-            ? `<button class="notif-btn" onclick="currentScreen='pendingRequests';renderApp()" title="${t('pendingRequestsTitle')}">
+            ? `<button class="notif-btn" onclick="currentScreen='pendingRequests';renderApp()" title="${t('pendingRequestsTitle')}" aria-label="${t('pendingRequestsTitle')}">
                 <i data-feather="bell" style="width:16px;height:16px"></i>
                 <span class="notif-badge">${pending}</span>
                </button>`
             : '';
         })() : ''}
-        <button class="theme-btn" onclick="toggleTheme()">
+        <button class="theme-btn" onclick="toggleTheme()" aria-label="${t('toggleTheme') || 'Toggle theme'}">
           ${(document.documentElement.getAttribute('data-theme') || 'light') === 'dark'
             ? '<i data-feather="sun" style="width:14px;height:14px"></i>'
             : '<i data-feather="moon" style="width:14px;height:14px"></i>'}
         </button>
         <button class="lang-btn" onclick="toggleLang()">${t('langToggle')}</button>
-        <button class="logout-btn" id="logout-btn"><i data-feather="log-out" style="width:14px;height:14px"></i></button>
+        <button class="logout-btn" id="logout-btn" aria-label="${t('logoutLabel') || 'Log out'}"><i data-feather="log-out" style="width:14px;height:14px"></i></button>
       </div>
-    </div>
+    </header>
   `;
 }
 
@@ -785,6 +856,7 @@ function renderDashboard(container) {
   const topRecent = recentRecords.slice(0, 5);
 
   container.innerHTML = `
+    <h1 class="sr-only">${t('nav_dashboard')}</h1>
     <div class="welcome-card">
       <div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(239,239,236,0.45);margin-bottom:10px;font-family:'Quattrocento Sans',sans-serif">Arava Distillery · Production Control</div>
       <h2>${t('welcome')}, ${esc(getUserDisplayName())}</h2>
@@ -927,6 +999,7 @@ function renderModuleList(container) {
   // FAB
   if (hasPermission('canAddRecords')) {
     const fab = el('button', 'fab-add', '<i data-feather="plus"></i>');
+    fab.setAttribute('aria-label', t('tapPlusToAdd') || 'Add new record');
     fab.addEventListener('click', () => {
       editingRecord = null;
       currentView = 'form';
@@ -1604,6 +1677,7 @@ function renderInventory(container) {
   const activeFerm = fermRecords.filter(r => !r.sentToDistillation).length;
 
   container.innerHTML = `
+    <h1 class="sr-only">${t('mod_inventory')}</h1>
     ${totalPending > 0 ? `
     <div class="inv-pending-banner">
       <i data-feather="clock" style="width:14px;height:14px;margin-inline-end:6px;"></i>
@@ -2185,6 +2259,14 @@ function scheduleHardRefresh(intervalMs = 30 * 60 * 1000) {
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
   if (typeof initFirebase === 'function') initFirebase();
+  // Restore from URL hash if present, otherwise use sessionStorage state
+  if (location.hash && location.hash !== '#/') {
+    _restoreStateFromHash();
+  }
+  // On restore, if we're in form/detail view but have no editingRecord, fall back to list
+  if ((currentView === 'form' || currentView === 'detail') && !editingRecord) {
+    currentView = 'list';
+  }
   renderApp();
   scheduleHardRefresh();
 });

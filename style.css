@@ -144,6 +144,19 @@ html[dir="rtl"] .toggle-switch input:checked + .toggle-slider::before {
   transform: translateX(-20px);
 }
 
+/* ── Screen-reader only utility ── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ── App Shell ── */
 #app {
   height: 100%;
@@ -416,10 +429,13 @@ html[dir="rtl"] .toggle-switch input:checked + .toggle-slider::before {
   border: none;
   color: var(--accent);
   cursor: pointer;
-  padding: 7px;
+  padding: 10px;
+  min-width: 44px;
+  min-height: 44px;
   border-radius: 50%;
   display: flex;
   align-items: center;
+  justify-content: center;
   transition: background 0.2s;
   flex-shrink: 0;
   touch-action: manipulation;
@@ -1087,6 +1103,11 @@ html[dir="rtl"] .toggle-switch input:checked + .toggle-slider::before {
 .ri-badge.not-approved{ background: var(--danger-bg);  color: var(--danger); }
 .ri-badge.pending     { background: var(--warning-bg); color: var(--warning); }
 
+/* Dark mode: boost badge text contrast to meet WCAG AA */
+[data-theme="dark"] .ri-badge.approved     { color: #8FD4A0; }
+[data-theme="dark"] .ri-badge.not-approved { color: #E08A8A; }
+[data-theme="dark"] .ri-badge.pending      { color: #D4B856; }
+
 /* ============================================================
    INVENTORY
    ============================================================ */
@@ -1279,12 +1300,14 @@ html[dir="rtl"] .toggle-switch input:checked + .toggle-slider::before {
     border-right: 1px solid var(--border);
     box-shadow: 0 0 60px rgba(0, 0, 0, 0.4);
     max-width: 480px;
+    margin: 0 auto;
   }
 
   body {
     display: flex;
     align-items: flex-start;
     justify-content: center;
+    overflow-x: hidden;
   }
 }
 
@@ -1315,6 +1338,9 @@ html[dir="rtl"] .toggle-switch input:checked + .toggle-slider::before {
     display: flex;
     align-items: center;
     justify-content: center;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow: hidden;
   }
 
   #app {
@@ -1406,7 +1432,8 @@ html[dir="rtl"] .toggle-switch input:checked + .toggle-slider::before {
 
 .tab-btn {
   flex: 1;
-  padding: 9px 4px;
+  padding: 12px 4px;
+  min-height: 44px;
   border: none;
   background: transparent;
   color: var(--text-muted);
@@ -1626,7 +1653,9 @@ html[dir="rtl"] .toggle-switch input:checked + .toggle-slider::before {
 .role-pill-manager { background: rgba(90, 200, 250, 0.15); color: #0099CC; }
 .role-pill-worker  { background: var(--success-bg); color: var(--success); }
 
-[data-theme="dark"] .role-pill-manager { color: #5AC8FA; }
+[data-theme="dark"] .role-pill-admin   { color: #A0C4AF; }
+[data-theme="dark"] .role-pill-manager { color: #7AD4FA; }
+[data-theme="dark"] .role-pill-worker  { color: #8FD4A0; }
 
 .backoffice-subtitle {
   font-size: 13px;
@@ -1776,9 +1805,13 @@ html[dir="rtl"] .toggle-switch input:checked + .toggle-slider::before {
   cursor: pointer;
   color: var(--accent);
   padding: 6px;
+  min-width: 44px;
+  min-height: 44px;
   display: flex;
   align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  touch-action: manipulation;
 }
 
 .notif-badge {
@@ -1796,4 +1829,16 @@ html[dir="rtl"] .toggle-switch input:checked + .toggle-slider::before {
   align-items: center;
   justify-content: center;
   padding: 0 4px;
+}
+
+/* ============================================================
+   REDUCED MOTION — disable all animations for a11y
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
