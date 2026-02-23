@@ -3,6 +3,11 @@
 // ============================================================
 // SETUP: Replace the config below with your Firebase project config.
 // Get it from: Firebase Console → Project Settings → Your Apps → SDK setup
+//
+// IMPORTANT: Before enabling Firebase, you MUST configure Firestore Security Rules
+// to require authentication and enforce role-based access. Default test-mode rules
+// allow anyone with the API key to read/write all data. See:
+// https://firebase.google.com/docs/firestore/security/get-started
 // ============================================================
 
 const FIREBASE_CONFIG = {
@@ -217,13 +222,16 @@ async function fbGetUsers() {
 async function fbSaveUser(user) {
   if (!isFirebaseReady()) return null;
   try {
+    // Strip password before writing to Firestore (BUG-044: FB-03)
+    const safeUser = { ...user };
+    delete safeUser.password;
     // Upsert by username
     const snap = await _db.collection('factory_users')
       .where('username', '==', user.username).limit(1).get();
     if (snap.empty) {
-      await _db.collection('factory_users').add(user);
+      await _db.collection('factory_users').add(safeUser);
     } else {
-      await snap.docs[0].ref.update(user);
+      await snap.docs[0].ref.update(safeUser);
     }
     return true;
   } catch (e) {

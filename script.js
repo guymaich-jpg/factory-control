@@ -3,10 +3,70 @@
 // ============================================================
 
 // ---------- State ----------
-let currentScreen = 'dashboard';
-let currentModule = null;   // which form/list is open
-let currentView = 'list';   // 'list' | 'form' | 'detail'
+// Restore navigation state from sessionStorage so refresh keeps the user's place
+let currentScreen = sessionStorage.getItem('fc_screen') || 'dashboard';
+let currentModule = sessionStorage.getItem('fc_module') || null;
+let currentView = sessionStorage.getItem('fc_view') || 'list';
 let editingRecord = null;
+
+// Persist navigation state on every change
+function _persistNavState() {
+  sessionStorage.setItem('fc_screen', currentScreen || 'dashboard');
+  if (currentModule) sessionStorage.setItem('fc_module', currentModule);
+  else sessionStorage.removeItem('fc_module');
+  sessionStorage.setItem('fc_view', currentView || 'list');
+}
+
+// --- Hash-based routing for browser back/forward ---
+let _suppressHashChange = false;
+
+function _syncHashToState() {
+  _suppressHashChange = true;
+  let hash = '#/';
+  if (currentModule) {
+    hash = '#/' + currentModule;
+    if (currentView && currentView !== 'list') hash += '/' + currentView;
+  } else if (currentScreen && currentScreen !== 'dashboard') {
+    hash = '#/' + currentScreen;
+  }
+  if (location.hash !== hash) {
+    history.pushState(null, '', hash);
+  }
+  _suppressHashChange = false;
+}
+
+function _restoreStateFromHash() {
+  const hash = location.hash.replace('#/', '').split('/');
+  const segment = hash[0] || '';
+  const view = hash[1] || 'list';
+
+  const moduleNames = ['rawMaterials', 'dateReceiving', 'fermentation', 'distillation1', 'distillation2', 'bottling', 'inventory'];
+  const screenNames = ['dashboard', 'backoffice', 'pendingRequests'];
+
+  if (moduleNames.includes(segment)) {
+    currentModule = segment;
+    currentScreen = segment === 'inventory' ? 'inventory' : segment;
+    currentView = (view === 'form' || view === 'detail') ? view : 'list';
+  } else if (screenNames.includes(segment)) {
+    currentScreen = segment;
+    currentModule = null;
+    currentView = 'list';
+  } else {
+    currentScreen = 'dashboard';
+    currentModule = null;
+    currentView = 'list';
+  }
+  // Can't restore editingRecord from URL, fall back to list
+  if ((currentView === 'form' || currentView === 'detail') && !editingRecord) {
+    currentView = 'list';
+  }
+}
+
+window.addEventListener('popstate', () => {
+  if (_suppressHashChange) return;
+  _restoreStateFromHash();
+  renderApp();
+});
 let signatureCanvas = null;
 let sigCtx = null;
 let sigDrawing = false;
@@ -16,12 +76,19 @@ const _scrollPositions = {}; // keyed by "screen:module" — preserves scroll on
 // ---------- Helpers ----------
 const $ = sel => document.querySelector(sel);
 const $$ = sel => document.querySelectorAll(sel);
+// NOTE: el() sets innerHTML — callers must ensure any user data is escaped via esc()
 const el = (tag, cls, html) => {
   const e = document.createElement(tag);
   if (cls) e.className = cls;
   if (html !== undefined) e.innerHTML = html;
   return e;
 };
+
+// HTML escape helper — prevents XSS when interpolating user data into innerHTML
+function esc(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
 
 function todayStr() { return new Date().toISOString().slice(0, 10); }
 
@@ -35,6 +102,8 @@ function showToast(msg) {
   let toast = $('.toast');
   if (!toast) {
     toast = el('div', 'toast');
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
     document.body.appendChild(toast);
   }
   toast.textContent = msg;
@@ -359,8 +428,10 @@ function showManagerPasswordModal(onSuccess) {
 
     // Verify: must be a manager or admin password
     const users = getUsers();
+    const hashedPwd = typeof hashPassword === 'function' ? hashPassword(pwd) : pwd;
     const authorized = users.find(
-      u => (u.role === 'manager' || u.role === 'admin') && u.password === pwd
+      u => (u.role === 'manager' || u.role === 'admin') &&
+           (u.password === hashedPwd || u.password === pwd)
     );
     if (!authorized) {
       errorEl.textContent = t('deleteWrongPassword');
@@ -382,15 +453,24 @@ function renderApp() {
   const session = getSession();
 
   if (!session) {
+    // Clear nav state when logged out
+    currentScreen = 'dashboard';
+    currentModule = null;
+    currentView = 'list';
+    _persistNavState();
     app.innerHTML = renderLogin();
     if (typeof feather !== 'undefined') feather.replace();
     bindLogin();
     return;
   }
 
+  // Persist current navigation state for refresh recovery
+  _persistNavState();
+  _syncHashToState();
+
   app.innerHTML = `
     ${renderHeader()}
-    <div class="screen-content" id="screen-content"></div>
+    <main class="screen-content" id="screen-content"></main>
     ${renderBottomNav()}
   `;
 
@@ -533,6 +613,15 @@ function bindLogin() {
       const pass = passInput.value;
       if (!email || !pass) return;
       const session = authenticate(email, pass);
+      if (session && session.locked) {
+        // Show rate limit error
+        const lockErrEl = document.querySelector('.login-error') || document.querySelector('#login-error');
+        if (lockErrEl) {
+          lockErrEl.textContent = t('loginLocked') || 'Too many failed attempts. Try again in 15 minutes.';
+          lockErrEl.style.display = 'block';
+        }
+        return;
+      }
       if (session) {
         currentScreen = 'dashboard';
         currentModule = null;
@@ -609,31 +698,31 @@ function renderHeader() {
   const roleClass = session.role === 'worker' ? 'worker' : '';
 
   return `
-    <div class="app-header">
+    <header class="app-header" role="banner">
       <div class="header-left">
-        ${showBack ? `<button class="header-back" id="header-back"><i data-feather="arrow-left"></i></button>` : ''}
-        <span class="user-badge"><span class="role-dot ${roleClass}"></span>${getUserDisplayName()}</span>
+        ${showBack ? `<button class="header-back" id="header-back" aria-label="${t('back') || 'Back'}"><i data-feather="arrow-left"></i></button>` : ''}
+        <span class="user-badge"><span class="role-dot ${roleClass}"></span>${esc(getUserDisplayName())}</span>
       </div>
-      <span class="header-title">${title}</span>
+      <span class="header-title">${esc(title)}</span>
       <div class="header-right">
         ${session.role === 'admin' ? (() => {
           const pending = getPendingRequests().length;
           return pending > 0
-            ? `<button class="notif-btn" onclick="currentScreen='pendingRequests';renderApp()" title="${t('pendingRequestsTitle')}">
+            ? `<button class="notif-btn" onclick="currentScreen='pendingRequests';renderApp()" title="${t('pendingRequestsTitle')}" aria-label="${t('pendingRequestsTitle')}">
                 <i data-feather="bell" style="width:16px;height:16px"></i>
                 <span class="notif-badge">${pending}</span>
                </button>`
             : '';
         })() : ''}
-        <button class="theme-btn" onclick="toggleTheme()">
+        <button class="theme-btn" onclick="toggleTheme()" aria-label="${t('toggleTheme') || 'Toggle theme'}">
           ${(document.documentElement.getAttribute('data-theme') || 'light') === 'dark'
             ? '<i data-feather="sun" style="width:14px;height:14px"></i>'
             : '<i data-feather="moon" style="width:14px;height:14px"></i>'}
         </button>
         <button class="lang-btn" onclick="toggleLang()">${t('langToggle')}</button>
-        <button class="logout-btn" id="logout-btn"><i data-feather="log-out" style="width:14px;height:14px"></i></button>
+        <button class="logout-btn" id="logout-btn" aria-label="${t('logoutLabel') || 'Log out'}"><i data-feather="log-out" style="width:14px;height:14px"></i></button>
       </div>
-    </div>
+    </header>
   `;
 }
 
@@ -767,9 +856,10 @@ function renderDashboard(container) {
   const topRecent = recentRecords.slice(0, 5);
 
   container.innerHTML = `
+    <h1 class="sr-only">${t('nav_dashboard')}</h1>
     <div class="welcome-card">
       <div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(239,239,236,0.45);margin-bottom:10px;font-family:'Quattrocento Sans',sans-serif">Arava Distillery · Production Control</div>
-      <h2>${t('welcome')}, ${getUserDisplayName()}</h2>
+      <h2>${t('welcome')}, ${esc(getUserDisplayName())}</h2>
       <p>${new Date().toLocaleDateString(currentLang === 'th' ? 'th-TH' : currentLang === 'he' ? 'he-IL' : 'en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
     </div>
 
@@ -793,7 +883,7 @@ function renderDashboard(container) {
       ${modules.map(m => `
         <div class="module-card" data-module="${m.key}">
           <div class="mc-icon"><i data-feather="${m.icon}"></i></div>
-          <div class="mc-title">${getModuleTitle(m.key)}</div>
+          <div class="mc-title">${esc(getModuleTitle(m.key))}</div>
           <div class="mc-count">${m.store ? getRecordCount(m.store) + ' ' + t('totalRecords').toLowerCase() : ''}</div>
         </div>
       `).join('')}
@@ -805,11 +895,11 @@ function renderDashboard(container) {
         const title = r.item || r.supplier || r.drinkType || r.type || r.batchNumber || getModuleTitle(r._module);
         const time = r.createdAt ? formatDate(r.createdAt) : '';
         return `
-          <div class="recent-activity-item" data-ra-module="${r._module}" data-ra-id="${r.id}">
+          <div class="recent-activity-item" data-ra-module="${esc(r._module)}" data-ra-id="${esc(r.id)}">
             <div class="ra-icon" style="background:${r._color}20;color:${r._color}"><i data-feather="${r._icon}"></i></div>
             <div class="ra-content">
-              <div class="ra-title">${title}</div>
-              <div class="ra-meta">${getModuleTitle(r._module)} &bull; ${time}</div>
+              <div class="ra-title">${esc(title)}</div>
+              <div class="ra-meta">${esc(getModuleTitle(r._module))} &bull; ${esc(time)}</div>
             </div>
           </div>`;
       }).join('')}
@@ -909,6 +999,7 @@ function renderModuleList(container) {
   // FAB
   if (hasPermission('canAddRecords')) {
     const fab = el('button', 'fab-add', '<i data-feather="plus"></i>');
+    fab.setAttribute('aria-label', t('tapPlusToAdd') || 'Add new record');
     fab.addEventListener('click', () => {
       editingRecord = null;
       currentView = 'form';
@@ -969,40 +1060,40 @@ function renderRecordItem(r) {
 
   switch (currentModule) {
     case 'rawMaterials':
-      title = r.item || r.category || '-';
-      details = `${t('rm_supplier')}: ${r.supplier || '-'} &bull; ${r.weight || '-'} ${r.unit || ''}`;
+      title = esc(r.item || r.category || '-');
+      details = `${t('rm_supplier')}: ${esc(r.supplier || '-')} &bull; ${esc(r.weight || '-')} ${esc(r.unit || '')}`;
       break;
     case 'dateReceiving':
-      title = r.supplier || '-';
-      details = `${r.weight || '-'} kg`;
+      title = esc(r.supplier || '-');
+      details = `${esc(r.weight || '-')} kg`;
       break;
     case 'fermentation': {
       const crates = r.datesCrates !== undefined ? r.datesCrates : Math.round((parseFloat(r.datesKg) || 0) / 20);
-      title = `${r.tankSize || '-'}L ${t('fm_tankSize')}`;
-      details = `${crates} ${t('fm_datesCrates').split('(')[0].trim()}`;
+      title = `${esc(r.tankSize || '-')}L ${t('fm_tankSize')}`;
+      details = `${esc(crates)} ${t('fm_datesCrates').split('(')[0].trim()}`;
       break;
     }
     case 'distillation1':
-      title = r.type ? t(r.type) : '-';
-      details = `${t('d1_stillName')}: ${r.stillName ? t(r.stillName) : '-'} &bull; ${r.distilledQty || '-'} L`;
+      title = r.type ? esc(t(r.type)) : '-';
+      details = `${t('d1_stillName')}: ${r.stillName ? esc(t(r.stillName)) : '-'} &bull; ${esc(r.distilledQty || '-')} L`;
       break;
     case 'distillation2':
-      title = `${r.batchNumber || '-'} (${r.productType ? t(r.productType) : '-'})`;
-      details = `${r.initAlcohol || '-'}% &bull; ${r.quantity || '-'} L`;
+      title = `${esc(r.batchNumber || '-')} (${r.productType ? esc(t(r.productType)) : '-'})`;
+      details = `${esc(r.initAlcohol || '-')}% &bull; ${esc(r.quantity || '-')} L`;
       break;
     case 'bottling':
-      title = r.drinkType ? t(r.drinkType) : '-';
-      details = `${t('bt_batchNumber')}: ${r.batchNumber || '-'} &bull; ${r.bottleCount || '-'} ${t('bt_bottleCount').toLowerCase()}`;
+      title = r.drinkType ? esc(t(r.drinkType)) : '-';
+      details = `${t('bt_batchNumber')}: ${esc(r.batchNumber || '-')} &bull; ${esc(r.bottleCount || '-')} ${t('bt_bottleCount').toLowerCase()}`;
       badge = r.decision === 'approved'
         ? `<span class="ri-badge approved">${t('approved')}</span>`
         : r.decision === 'notApproved'
           ? `<span class="ri-badge not-approved">${t('notApproved')}</span>`
-          : `<span class="ri-badge pending">${t('bt_pendingApproval')}</span>${hasPermission('canApproveBottling') ? `<button class="approve-btn" data-id="${r.id}" style="margin-inline-start:6px;padding:2px 10px;font-size:11px;background:#22c55e;color:#fff;border:none;border-radius:6px;cursor:pointer;">${t('bt_approve')}</button>` : ''}`;
+          : `<span class="ri-badge pending">${t('bt_pendingApproval')}</span>${hasPermission('canApproveBottling') ? `<button class="approve-btn" data-id="${esc(r.id)}" style="margin-inline-start:6px;padding:2px 10px;font-size:11px;background:#22c55e;color:#fff;border:none;border-radius:6px;cursor:pointer;">${t('bt_approve')}</button>` : ''}`;
       break;
   }
 
   return `
-    <div class="record-item" data-id="${r.id}">
+    <div class="record-item" data-id="${esc(r.id)}">
       <div class="ri-top">
         <span class="ri-title">${title}</span>
         <span class="ri-date">${formatDate(r.date || r.createdAt)}</span>
@@ -1025,15 +1116,18 @@ function renderModuleDetail(container) {
   fields.forEach(f => {
     let val = r[f.key];
     if (f.type === 'toggle') val = val ? t('yes') : t('no');
-    else if (f.type === 'select' && val) val = f.options ? (f.options.find(o => o.value === val)?.labelKey ? t(f.options.find(o => o.value === val).labelKey) : val) : val;
+    else if (f.type === 'select' && val) {
+      const opt = f.options?.find(o => o.value === val);
+      val = opt?.labelKey ? t(opt.labelKey) : val;
+    }
     else if (f.type === 'date') val = formatDate(val);
     if (val === undefined || val === null || val === '') val = '-';
 
-    html += `<div class="detail-row"><span class="dl">${t(f.labelKey)}</span><span class="dv">${val}</span></div>`;
+    html += `<div class="detail-row"><span class="dl">${t(f.labelKey)}</span><span class="dv">${esc(val)}</span></div>`;
   });
 
   if (r.notes) {
-    html += `<div class="detail-row"><span class="dl">${t('notes')}</span><span class="dv">${r.notes}</span></div>`;
+    html += `<div class="detail-row"><span class="dl">${t('notes')}</span><span class="dv">${esc(r.notes)}</span></div>`;
   }
 
   html += '</div>';
@@ -1096,7 +1190,7 @@ function renderModuleForm(container) {
   html += `
     <div class="form-group">
       <label class="form-label">${t('notes')}</label>
-      <textarea class="form-textarea" id="field-notes" placeholder="${t('addNote')}">${notesVal}</textarea>
+      <textarea class="form-textarea" id="field-notes" placeholder="${t('addNote')}">${esc(notesVal)}</textarea>
     </div>
   `;
 
@@ -1213,14 +1307,14 @@ function renderFormField(f, val) {
       return `
         <div class="form-group">
           <label class="form-label">${t(f.labelKey)}${reqMark}</label>
-          <input type="date" class="form-input" id="field-${f.key}" value="${val || todayStr()}">
+          <input type="date" class="form-input" id="field-${f.key}" value="${esc(val || todayStr())}">
         </div>`;
 
     case 'number':
       return `
         <div class="form-group">
           <label class="form-label">${t(f.labelKey)}${reqMark}</label>
-          <input type="number" class="form-input" id="field-${f.key}" value="${val}" step="${f.step || 'any'}" min="${f.min ?? ''}" max="${f.max ?? ''}" placeholder="${f.placeholder || ''}">
+          <input type="number" class="form-input" id="field-${f.key}" value="${esc(val)}" step="${f.step || 'any'}" min="${f.min ?? ''}" max="${f.max ?? ''}" placeholder="${f.placeholder || ''}">
         </div>`;
 
     case 'text':
@@ -1228,7 +1322,7 @@ function renderFormField(f, val) {
       return `
         <div class="form-group" style="${display}">
           <label class="form-label">${t(f.labelKey)}${reqMark}</label>
-          <input type="text" class="form-input" id="field-${f.key}" value="${val}" placeholder="${f.placeholder || ''}">
+          <input type="text" class="form-input" id="field-${f.key}" value="${esc(val)}" placeholder="${f.placeholder || ''}">
         </div>`;
 
 
@@ -1244,9 +1338,9 @@ function renderFormField(f, val) {
             ${(f.options || []).map(o => {
               const optVal = o.value || o;
               const optLabel = o.labelKey ? t(o.labelKey) : (o.label || o);
-              return `<option value="${optVal}" ${val === optVal ? 'selected' : ''}>${optLabel}</option>`;
+              return `<option value="${esc(optVal)}" ${val === optVal ? 'selected' : ''}>${esc(optLabel)}</option>`;
             }).join('')}
-            ${allCustom.map(c => `<option value="${c}" ${val === c ? 'selected' : ''}>${c}</option>`).join('')}
+            ${allCustom.map(c => `<option value="${esc(c)}" ${val === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}
             ${!skipAddNew ? `<option value="__ADD_NEW__">${t('addNewOption')}</option>` : ''}
           </select>
           ${!skipAddNew ? `
@@ -1289,9 +1383,9 @@ function renderFormField(f, val) {
         <div class="form-group">
           <label class="form-label">${t(f.labelKey)}</label>
           <div class="time-range-row">
-            <input type="time" class="form-input" id="field-${f.key}-start" value="${parts[0] || ''}">
+            <input type="time" class="form-input" id="field-${f.key}-start" value="${esc(parts[0] || '')}">
             <span>—</span>
-            <input type="time" class="form-input" id="field-${f.key}-end" value="${parts[1] || ''}">
+            <input type="time" class="form-input" id="field-${f.key}-end" value="${esc(parts[1] || '')}">
           </div>
         </div>`;
 
@@ -1303,7 +1397,7 @@ function renderFormField(f, val) {
             <button class="btn ${val === 'approved' ? 'btn-success' : 'btn-secondary'}" data-decision="approved" id="field-${f.key}-approved" style="flex:1">${t('approved')}</button>
             <button class="btn ${val === 'notApproved' ? 'btn-danger' : 'btn-secondary'}" data-decision="notApproved" id="field-${f.key}-notApproved" style="flex:1">${t('notApproved')}</button>
           </div>
-          <input type="hidden" id="field-${f.key}" value="${val || ''}">
+          <input type="hidden" id="field-${f.key}" value="${esc(val || '')}">
         </div>`;
 
     default:
@@ -1321,7 +1415,7 @@ function bindCascadingDropdowns() {
       const cat = catSelect.value;
       const items = ITEMS_BY_CATEGORY[cat] || [];
       itemSelect.innerHTML = `<option value="">${t('selectOne')}</option>` +
-        items.map(i => `<option value="${i}">${i}</option>`).join('');
+        items.map(i => `<option value="${esc(i)}">${esc(i)}</option>`).join('');
     };
     catSelect.addEventListener('change', updateItems);
 
@@ -1367,6 +1461,10 @@ function bindCascadingDropdowns() {
 }
 
 function saveCurrentForm() {
+  // Disable save button during submission (BUG-047)
+  const saveBtn = document.querySelector('#form-save');
+  if (saveBtn) saveBtn.disabled = true;
+
   const fields = getModuleFields(currentModule);
   const record = {};
 
@@ -1396,6 +1494,7 @@ function saveCurrentForm() {
     // Scroll to first error
     const firstErr = document.querySelector('.field-error');
     if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (saveBtn) saveBtn.disabled = false;
     return;
   }
 
@@ -1417,6 +1516,7 @@ function saveCurrentForm() {
   for (const f of fields) {
     if (f.type === 'select' && record[f.key] === '__ADD_NEW__') {
       showToast(`${t('required')}: ${t(f.labelKey)}`);
+      if (saveBtn) saveBtn.disabled = false;
       return;
     }
   }
@@ -1433,6 +1533,7 @@ function saveCurrentForm() {
     const isSigned = pixelData.some((v, i) => i % 4 === 3 && v > 0);
     if (!isSigned) {
       showToast(`${t('required')}: ${t('bt_qaSignature')}`);
+      if (saveBtn) saveBtn.disabled = false;
       return;
     }
     record.signature = signatureCanvas.toDataURL();
@@ -1442,7 +1543,6 @@ function saveCurrentForm() {
   if (!record.date) record.date = todayStr();
 
   // Show loading state on save button
-  const saveBtn = document.querySelector('#form-save');
   if (saveBtn) saveBtn.classList.add('is-loading');
 
   const storeKey = STORE_KEYS[currentModule];
@@ -1456,6 +1556,7 @@ function saveCurrentForm() {
   showToast(t('saved'));
   syncModuleToSheets(currentModule);
   syncInventorySnapshot('save');
+  if (saveBtn) saveBtn.disabled = false;
   editingRecord = null;
   currentView = 'list';
   _navDirection = 'back';
@@ -1576,6 +1677,7 @@ function renderInventory(container) {
   const activeFerm = fermRecords.filter(r => !r.sentToDistillation).length;
 
   container.innerHTML = `
+    <h1 class="sr-only">${t('mod_inventory')}</h1>
     ${totalPending > 0 ? `
     <div class="inv-pending-banner">
       <i data-feather="clock" style="width:14px;height:14px;margin-inline-end:6px;"></i>
@@ -1628,7 +1730,7 @@ function renderInventory(container) {
             ${Object.entries(rawInv).length === 0 ? `<tr><td colspan="2" style="text-align:center">${t('noData')}</td></tr>` :
       Object.entries(rawInv).map(([item, qty]) => {
         const cls = qty > 0 ? 'stock-positive' : qty < 0 ? 'stock-negative' : 'stock-zero';
-        return `<tr><td>${item}</td><td style="text-align:right" class="${cls}">${qty}</td></tr>`;
+        return `<tr><td>${esc(item)}</td><td style="text-align:right" class="${cls}">${esc(qty)}</td></tr>`;
       }).join('')
     }
           </tbody>
@@ -1647,24 +1749,10 @@ function renderInventory(container) {
       const tab = btn.dataset.invTab;
       container.querySelector('#inv-bottles').style.display = tab === 'bottles' ? '' : 'none';
       container.querySelector('#inv-raw').style.display = tab === 'raw' ? '' : 'none';
-      container.querySelector('#inv-versions').style.display = tab === 'versions' ? '' : 'none';
     });
   });
 
-  // Version Detail View
-  container.querySelectorAll('.inv-ver-item').forEach(item => {
-    item.addEventListener('click', () => {
-      const verId = item.dataset.ver;
-      const ver = versions.find(v => String(v.version) === verId);
-      if (ver) {
-        let gapSummary = Object.entries(ver.gaps)
-          .filter(([_, diff]) => diff !== 0)
-          .map(([key, diff]) => `${key}: ${diff > 0 ? '+' : ''}${diff}`)
-          .join('\n');
-        alert(`${t('versionLabel')} ${ver.version} ${t('gapsLabel')}:\n${gapSummary || t('noGaps')}`);
-      }
-    });
-  });
+  // Version Detail View — removed: dead code referencing undefined 'versions' variable (BUG-012)
 
   // Schedule auto-refresh when pending records become visible
   scheduleInventoryRefresh(container);
@@ -1829,18 +1917,18 @@ function renderBackoffice(container) {
 
     <div class="record-list" style="margin-top:16px;">
       ${users.map(u => `
-        <div class="record-item user-item" data-username="${u.username}">
+        <div class="record-item user-item" data-username="${esc(u.username)}">
           <div class="ri-top">
             <span class="ri-title">
-              ${u.username}
-              <span class="role-pill role-pill-${u.role}" style="margin-inline-start:6px;">${t('role_' + u.role)}</span>
+              ${esc(u.username)}
+              <span class="role-pill role-pill-${esc(u.role)}" style="margin-inline-start:6px;">${t('role_' + u.role)}</span>
             </span>
             <span class="ri-badge ${u.status === 'inactive' ? 'not-approved' : 'approved'}">
               ${u.status === 'inactive' ? t('inactive') : t('active')}
             </span>
           </div>
           <div class="ri-details">
-            ${currentLang === 'he' ? (u.nameHe || u.name || '-') : currentLang === 'th' ? (u.nameTh || u.name || '-') : (u.name || '-')}
+            ${esc(currentLang === 'he' ? (u.nameHe || u.name || '-') : currentLang === 'th' ? (u.nameTh || u.name || '-') : (u.name || '-'))}
             <div style="font-size:10px; margin-top:4px; color:var(--text-muted);">
               ${t('lastActivity')}: ${u.lastActivity ? formatDate(u.lastActivity) : '-'}
             </div>
@@ -1941,9 +2029,9 @@ function renderUserForm(container) {
       
       <div class="form-group">
         <label class="form-label">${t('username')} <span class="req">*</span></label>
-        <input type="text" class="form-input" id="bo-username" value="${u.username || ''}" ${isEdit ? 'disabled style="opacity:0.7"' : ''}>
+        <input type="text" class="form-input" id="bo-username" value="${esc(u.username || '')}" ${isEdit ? 'disabled style="opacity:0.7"' : ''}>
       </div>
-      
+
       ${!isEdit ? `
       <div class="form-group">
         <label class="form-label">${t('password')} <span class="req">*</span></label>
@@ -1955,20 +2043,20 @@ function renderUserForm(container) {
         <input type="password" class="form-input" id="bo-password" placeholder="${t('keepCurrentPassword')}">
       </div>
       `}
-      
+
       <div class="form-group">
         <label class="form-label">${t('nameEnglish')} <span class="req">*</span></label>
-        <input type="text" class="form-input" id="bo-name" value="${u.name || ''}">
+        <input type="text" class="form-input" id="bo-name" value="${esc(u.name || '')}">
       </div>
 
       <div class="form-group">
         <label class="form-label">${t('nameHebrew')}</label>
-        <input type="text" class="form-input" id="bo-nameHe" value="${u.nameHe || ''}" dir="rtl">
+        <input type="text" class="form-input" id="bo-nameHe" value="${esc(u.nameHe || '')}" dir="rtl">
       </div>
 
       <div class="form-group">
         <label class="form-label">${t('fullName')} (Thai)</label>
-        <input type="text" class="form-input" id="bo-nameTh" value="${u.nameTh || ''}">
+        <input type="text" class="form-input" id="bo-nameTh" value="${esc(u.nameTh || '')}">
       </div>
 
       <div class="form-group">
@@ -2112,16 +2200,16 @@ function renderPendingRequests(container) {
       ${requests.length === 0
         ? `<div class="empty-state"><p>${t('pendingRequestsEmpty')}</p></div>`
         : requests.map(req => `
-          <div class="record-item" id="req-card-${req.id}">
+          <div class="record-item" id="req-card-${esc(req.id)}">
             <div class="ri-main">
-              <div class="ri-title">${req.name}</div>
-              <div class="ri-details">${req.email}<br><small>${new Date(req.requestedAt).toLocaleDateString()}</small></div>
+              <div class="ri-title">${esc(req.name)}</div>
+              <div class="ri-details">${esc(req.email)}<br><small>${new Date(req.requestedAt).toLocaleDateString()}</small></div>
             </div>
             <div style="display:flex;flex-direction:column;gap:6px;padding:10px 12px">
               <div style="display:flex;gap:6px">
-                <input type="password" id="pwd-${req.id}" placeholder="${t('setPassword')}"
+                <input type="password" id="pwd-${esc(req.id)}" placeholder="${t('setPassword')}"
                   style="flex:1;padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-input);color:var(--text);font-size:13px">
-                <select id="role-${req.id}"
+                <select id="role-${esc(req.id)}"
                   style="padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-input);color:var(--text);font-size:13px">
                   <option value="worker">${t('role_worker')}</option>
                   <option value="manager">${t('role_manager')}</option>
@@ -2129,8 +2217,8 @@ function renderPendingRequests(container) {
                 </select>
               </div>
               <div style="display:flex;gap:6px">
-                <button class="btn btn-primary" style="flex:1" onclick="handleApproveRequest('${req.id}')">${t('approveUser')}</button>
-                <button class="btn btn-danger" style="flex:1" onclick="handleDenyRequest('${req.id}')">${t('denyUser')}</button>
+                <button class="btn btn-primary" style="flex:1" onclick="handleApproveRequest('${esc(req.id)}')">${t('approveUser')}</button>
+                <button class="btn btn-danger" style="flex:1" onclick="handleDenyRequest('${esc(req.id)}')">${t('denyUser')}</button>
               </div>
             </div>
           </div>`).join('')}
@@ -2159,7 +2247,11 @@ function handleDenyRequest(requestId) {
 // AUTO HARD-REFRESH
 // ============================================================
 function scheduleHardRefresh(intervalMs = 30 * 60 * 1000) {
-  setTimeout(() => location.reload(true), intervalMs);
+  setInterval(() => {
+    // Don't reload if user is editing a form (BUG-030)
+    if (currentView === 'form' || document.querySelector('.modal-overlay')) return;
+    location.reload(true);
+  }, intervalMs);
 }
 
 // ============================================================
@@ -2167,6 +2259,14 @@ function scheduleHardRefresh(intervalMs = 30 * 60 * 1000) {
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
   if (typeof initFirebase === 'function') initFirebase();
+  // Restore from URL hash if present, otherwise use sessionStorage state
+  if (location.hash && location.hash !== '#/') {
+    _restoreStateFromHash();
+  }
+  // On restore, if we're in form/detail view but have no editingRecord, fall back to list
+  if ((currentView === 'form' || currentView === 'detail') && !editingRecord) {
+    currentView = 'list';
+  }
   renderApp();
   scheduleHardRefresh();
 });

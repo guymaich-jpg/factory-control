@@ -19,14 +19,27 @@ function getData(key) {
   try {
     return JSON.parse(localStorage.getItem(key) || '[]');
   } catch (e) {
-    console.warn('[data] Corrupted localStorage key:', key);
+    console.error('[data] Corrupted localStorage key:', key, e.message);
+    // Backup corrupted data before removing
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      try { localStorage.setItem(key + '_corrupted_backup', raw); } catch(_) {}
+    }
     localStorage.removeItem(key);
     return [];
   }
 }
 
 function setData(key, data) {
-  localStorage.setItem(key, JSON.stringify(data));
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (e) {
+    if (e.name === 'QuotaExceededError' || e.code === 22) {
+      alert('Storage is full. Please export and clear old data.');
+    }
+    console.error('[data] localStorage.setItem failed:', key, e);
+    return;
+  }
   const session = JSON.parse(localStorage.getItem('factory_session') || 'null');
   if (session && session.username) {
     updateUserLastActivity(session.username);
@@ -44,8 +57,26 @@ function updateUserLastActivity(username) {
 
 // ---- CRUD (localStorage, synced to Firebase when available) ----
 function addRecord(key, record) {
+  // Validate: reject prototype pollution keys
+  const dangerousKeys = ['__proto__', 'constructor'];
+  for (const k of Object.keys(record)) {
+    if (dangerousKeys.includes(k)) {
+      console.error('[data] Rejected record with dangerous key:', k);
+      return null;
+    }
+  }
+
+  // Validate: limit record size to 100KB
+  const recordJSON = JSON.stringify(record);
+  if (recordJSON.length > 100 * 1024) {
+    console.error('[data] Rejected record exceeding 100KB limit:', recordJSON.length, 'bytes');
+    return null;
+  }
+
   const data = getData(key);
-  record.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  record.id = (typeof crypto !== 'undefined' && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
   record.createdAt = new Date().toISOString();
   record.createdBy = getSession()?.username || 'unknown';
   data.unshift(record);
@@ -53,7 +84,7 @@ function addRecord(key, record) {
 
   // Async sync to Firebase (fire-and-forget)
   if (typeof fbAdd === 'function') {
-    fbAdd(key, record).catch(() => {});
+    fbAdd(key, record).catch(e => console.warn('[data] Firebase sync failed:', e.message));
   }
 
   return record;
@@ -67,7 +98,7 @@ function updateRecord(key, id, updates) {
     setData(key, data);
 
     if (typeof fbUpdate === 'function') {
-      fbUpdate(key, id, updates).catch(() => {});
+      fbUpdate(key, id, updates).catch(e => console.warn('[data] Firebase sync failed:', e.message));
     }
 
     return data[idx];
@@ -81,7 +112,7 @@ function deleteRecord(key, id) {
   setData(key, filtered);
 
   if (typeof fbDelete === 'function') {
-    fbDelete(key, id).catch(() => {});
+    fbDelete(key, id).catch(e => console.warn('[data] Firebase sync failed:', e.message));
   }
 }
 
@@ -262,7 +293,7 @@ function exportToCSV(keyOrData, filename) {
     headers.map(h => sanitizeCSV(row[h])).join(',')
   );
 
-  const csvContent = headers.join(',') + '\n' + rowStrings.join('\n');
+  const csvContent = headers.map(h => sanitizeCSV(h)).join(',') + '\n' + rowStrings.join('\n');
   const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -276,7 +307,7 @@ function exportAllData() {
   const keys = [
     'factory_rawMaterials', 'factory_dateReceiving', 'factory_fermentation',
     'factory_distillation1', 'factory_distillation2', 'factory_bottling',
-    'factory_inventoryVersions', 'factory_customSuppliers', 'factory_users'
+    'factory_inventoryVersions', 'factory_customSuppliers'
   ];
   const today = new Date().toISOString().slice(0, 10);
   keys.forEach(key => {

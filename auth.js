@@ -2,11 +2,52 @@
 // auth.js — Authentication & Role Management
 // ============================================================
 
+// --- Password hashing (AUTH-01, AUTH-02, AUTH-03) ---
+function hashPassword(password) {
+  // Simple hash for client-side storage — not a substitute for server-side bcrypt
+  let hash = 0x811c9dc5; // FNV offset basis
+  for (let i = 0; i < password.length; i++) {
+    hash ^= password.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193); // FNV prime
+  }
+  // Add salt-like mixing with password length
+  hash = hash ^ (password.length * 0x5bd1e995);
+  return 'hashed:' + (hash >>> 0).toString(36);
+}
+
+// --- Password complexity validation (AUTH-08) ---
+function validatePassword(password) {
+  if (!password || password.length < 6) {
+    return { valid: false, error: 'Password must be at least 6 characters' };
+  }
+  if (!/[a-zA-Z]/.test(password)) {
+    return { valid: false, error: 'Password must contain at least 1 letter' };
+  }
+  if (!/[0-9]/.test(password)) {
+    return { valid: false, error: 'Password must contain at least 1 digit' };
+  }
+  return { valid: true };
+}
+
+// --- Email validation (AUTH-11) ---
+function validateEmail(email) {
+  if (!email) return { valid: false, error: 'Email is required' };
+  // Basic email regex check
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return { valid: false, error: 'Invalid email format' };
+  }
+  return { valid: true };
+}
+
+// --- Rate limiting (AUTH-06) ---
+const _loginAttempts = {};
+
 // The two owner accounts — login is by email + password
 const DEFAULT_USERS = [
   {
     username: 'guymaich',
-    password: 'Guy1234',
+    password: hashPassword('Guy1234'),
     role: 'admin',
     name: 'Guy Maich',
     nameHe: 'גיא מייך',
@@ -15,7 +56,7 @@ const DEFAULT_USERS = [
   },
   {
     username: 'yonatangarini',
-    password: 'Yon1234',
+    password: hashPassword('Yon1234'),
     role: 'admin',
     name: 'Yonatan Garini',
     nameHe: 'יונתן גריני',
@@ -82,7 +123,8 @@ function getUsers() {
     let changed = false;
     for (const required of DEFAULT_USERS) {
       if (!users.find(u => u.username === required.username)) {
-        users.push(required);
+        // Use the hashed password from DEFAULT_USERS (already hashed)
+        users.push({ ...required });
         changed = true;
       }
     }
@@ -93,21 +135,66 @@ function getUsers() {
 
 // Authenticate by email (primary) or username, with password
 function authenticate(emailOrUsername, password) {
+  // --- Rate limiting check (AUTH-06) ---
+  const key = emailOrUsername.toLowerCase();
+  const now = Date.now();
+  const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
+  const MAX_ATTEMPTS = 5;
+
+  if (_loginAttempts[key]) {
+    // Clean up old attempts outside the window
+    _loginAttempts[key] = _loginAttempts[key].filter(t => (now - t) < RATE_LIMIT_WINDOW);
+    if (_loginAttempts[key].length >= MAX_ATTEMPTS) {
+      return { locked: true };
+    }
+  }
+
   const users = getUsers();
-  const user = users.find(u =>
-    u.status !== 'inactive' &&
-    u.password === password &&
-    (
-      (u.email && u.email.toLowerCase() === emailOrUsername.toLowerCase()) ||
-      u.username.toLowerCase() === emailOrUsername.toLowerCase()
-    )
-  );
+  const hashedInput = hashPassword(password);
+
+  const user = users.find(u => {
+    if (u.status === 'inactive') return false;
+    const matchesIdentity =
+      (u.email && u.email.toLowerCase() === key) ||
+      u.username.toLowerCase() === key;
+    if (!matchesIdentity) return false;
+
+    // Check password: support hashed and legacy plaintext
+    if (u.password && u.password.startsWith('hashed:')) {
+      // Stored password is hashed — compare hashed input
+      return u.password === hashedInput;
+    } else {
+      // Legacy plaintext — compare directly, then upgrade
+      if (u.password === password) {
+        return true;
+      }
+      return false;
+    }
+  });
+
   if (user) {
-    const session = { ...user, loginTime: Date.now() };
+    // Upgrade legacy plaintext password to hashed (AUTH-01)
+    if (user.password && !user.password.startsWith('hashed:')) {
+      const idx = users.findIndex(u => u.username === user.username);
+      if (idx !== -1) {
+        users[idx].password = hashedInput;
+        localStorage.setItem('factory_users', JSON.stringify(users));
+      }
+    }
+
+    // Reset rate limiting on success
+    delete _loginAttempts[key];
+
+    const session = { ...user, loginTime: Date.now(), lastActivity: Date.now() };
     delete session.password;
     localStorage.setItem('factory_session', JSON.stringify(session));
     return session;
   }
+
+  // Record failed attempt for rate limiting
+  if (!_loginAttempts[key]) _loginAttempts[key] = [];
+  _loginAttempts[key].push(now);
+
   return null;
 }
 
@@ -124,6 +211,12 @@ function getPendingRequests() {
 
 function submitAccessRequest(name, email) {
   if (!name || !email) return { success: false, error: 'requestError_fillAll' };
+
+  // Validate email (AUTH-11)
+  const emailCheck = validateEmail(email);
+  if (!emailCheck.valid) {
+    return { success: false, error: emailCheck.error };
+  }
 
   const requests = getPendingRequests();
   if (requests.find(r => r.email.toLowerCase() === email.toLowerCase())) {
@@ -152,10 +245,17 @@ function approveRequest(requestId, password, role) {
   const req = requests.find(r => r.id === requestId);
   if (!req) return { success: false, error: 'Request not found' };
 
+  // Require password — no weak default (AUTH-07)
+  if (!password) return { success: false, error: 'Password is required' };
+
+  // Validate password complexity (AUTH-08)
+  const pwCheck = validatePassword(password);
+  if (!pwCheck.valid) return { success: false, error: pwCheck.error };
+
   const baseUsername = req.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '');
   const result = createUser({
     username: baseUsername,
-    password: password || 'Welcome1',
+    password: password,
     role: role || 'worker',
     name: req.name,
     email: req.email,
@@ -189,8 +289,10 @@ function getSession() {
   }
   if (!session) return null;
 
+  // Check session timeout against lastActivity (preferred) or loginTime (AUTH-09)
   const now = Date.now();
-  if (session.loginTime && (now - session.loginTime) > SESSION_TIMEOUT_MS) {
+  const lastActive = session.lastActivity || session.loginTime;
+  if (lastActive && (now - lastActive) > SESSION_TIMEOUT_MS) {
     localStorage.removeItem('factory_session');
     return null;
   }
@@ -201,6 +303,20 @@ function getSession() {
   }
 
   return session;
+}
+
+// Refresh session activity timestamp (AUTH-09)
+function refreshSession() {
+  let session;
+  try {
+    session = JSON.parse(localStorage.getItem('factory_session') || 'null');
+  } catch (e) {
+    return;
+  }
+  if (session) {
+    session.lastActivity = Date.now();
+    localStorage.setItem('factory_session', JSON.stringify(session));
+  }
 }
 
 function logout() {
@@ -219,6 +335,8 @@ function secureRecordAction(action) {
     logout();
     return false;
   }
+  // Refresh session on activity (AUTH-09)
+  refreshSession();
   return action();
 }
 
@@ -246,6 +364,10 @@ function updateUser(username, updates) {
   const users = getUsers();
   const idx = users.findIndex(u => u.username === username);
   if (idx !== -1) {
+    // Hash password if it's being updated (AUTH-03)
+    if (updates.password && !updates.password.startsWith('hashed:')) {
+      updates.password = hashPassword(updates.password);
+    }
     users[idx] = { ...users[idx], ...updates, updatedAt: new Date().toISOString() };
     localStorage.setItem('factory_users', JSON.stringify(users));
     return { success: true };
@@ -254,6 +376,12 @@ function updateUser(username, updates) {
 }
 
 function deleteUserByUsername(username) {
+  // Block deletion of owner accounts (AUTH-10, AUTH-11)
+  const ownerUsernames = DEFAULT_USERS.map(u => u.username);
+  if (ownerUsernames.includes(username)) {
+    return { success: false, error: 'Cannot delete owner accounts' };
+  }
+
   const users = getUsers();
   const filtered = users.filter(u => u.username !== username);
   if (filtered.length < users.length) {
@@ -269,8 +397,28 @@ function createUser(userData) {
     return { success: false, error: 'signUpError_userExists' };
   }
 
+  // Validate email if provided (AUTH-11)
+  if (userData.email) {
+    const emailCheck = validateEmail(userData.email);
+    if (!emailCheck.valid) {
+      return { success: false, error: emailCheck.error };
+    }
+  }
+
+  // Validate password complexity (AUTH-08)
+  const pwCheck = validatePassword(userData.password);
+  if (!pwCheck.valid) {
+    return { success: false, error: pwCheck.error };
+  }
+
+  // Hash password before storing (AUTH-01)
+  const hashedPw = (userData.password && !userData.password.startsWith('hashed:'))
+    ? hashPassword(userData.password)
+    : userData.password;
+
   const newUser = {
     ...userData,
+    password: hashedPw,
     createdAt: new Date().toISOString(),
     status: userData.status || 'active',
   };
