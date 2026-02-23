@@ -152,7 +152,7 @@ function subheading(text) {
   }
 
   // Body content
-  const bodyText = await page.textContent('body');
+  const bodyText = await page.textContent('body').catch(() => '');
   if (!bodyText || bodyText.trim().length < 10) {
     reportBug('P1', 'Smoke', 'Page body is empty or minimal', {
       detail: `Body text length: ${bodyText?.trim().length || 0} chars`,
