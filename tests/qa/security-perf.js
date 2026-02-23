@@ -53,7 +53,9 @@ function WARN(label) { totalWarn++; warn(label); }
   }
 
   const browser = await chromium.launch(launchOptions);
-  const context = await browser.newContext();
+  const context = await browser.newContext({
+    ignoreHTTPSErrors: true,  // Required: proxy does SSL interception
+  });
   const page = await context.newPage();
 
   // Collect all network resources for performance analysis
@@ -357,7 +359,7 @@ function WARN(label) { totalWarn++; warn(label); }
   // Get full page source plus all loaded JS files
   const allSourceCode = await page.evaluate(async (baseUrl) => {
     const jsFiles = ['script.js', 'auth.js', 'data.js', 'firebase.js', 'i18n.js'];
-    let allCode = document.documentElement.outerHTML + '\n';
+    let allCode = (document.documentElement ? document.documentElement.outerHTML : document.body ? document.body.innerHTML : '') + '\n';
     for (const f of jsFiles) {
       try {
         const resp = await fetch(new URL(f, baseUrl).href);
