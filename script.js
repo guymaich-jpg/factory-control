@@ -2419,8 +2419,12 @@ function renderUserForm(container) {
         showToast(t('cannotDeleteSelf'));
         return;
       }
-      showManagerPasswordModal(() => {
-        deleteUserByUsername(u.username);
+      showManagerPasswordModal(async () => {
+        const delResult = await deleteUserByUsername(u.username);
+        if (delResult && !delResult.success) {
+          showToast(delResult.error || t('error'));
+          return;
+        }
         showToast(t('delete') + ' ✓');
         currentView = 'list';
         editingRecord = null;
@@ -2462,7 +2466,7 @@ function renderUserForm(container) {
       const updates = { name, nameHe, nameTh, role, status };
       if (password) updates.password = password;
 
-      const res = updateUser(username, updates);
+      const res = await updateUser(username, updates);
       if (res.success) {
         showToast(t('saved'));
         currentView = 'list';

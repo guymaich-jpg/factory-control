@@ -356,6 +356,20 @@ async function fbAuthUpdatePassword(email, oldPassword, newPassword) {
   }
 }
 
+/**
+ * Get the current user's Firebase ID token for backend API calls.
+ * Returns null if no user is signed in or Firebase is unavailable.
+ */
+async function fbGetIdToken() {
+  if (!_firebaseReady || !_auth || !_auth.currentUser) return null;
+  try {
+    return await _auth.currentUser.getIdToken();
+  } catch (e) {
+    console.warn('[Firebase] getIdToken error:', e.message);
+    return null;
+  }
+}
+
 async function fbAuthSignOut() {
   if (!_auth) return;
   try {

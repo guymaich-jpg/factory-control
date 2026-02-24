@@ -398,7 +398,38 @@ function getUserRole() {
   return session.role;
 }
 
-function updateUser(username, updates) {
+async function updateUser(username, updates) {
+  // --- Try backend API first (handles Firebase Auth + Firestore + owner protection) ---
+  if (typeof apiCall === 'function') {
+    const apiResult = await apiCall('PUT', '/api/users/' + encodeURIComponent(username), {
+      name: updates.name,
+      nameHe: updates.nameHe,
+      nameTh: updates.nameTh,
+      role: updates.role,
+      status: updates.status,
+      password: updates.password,
+      app: 'factory',
+    });
+    if (apiResult && !apiResult.error) {
+      // Backend succeeded — also update localStorage for offline access
+      const users = getUsers();
+      const idx = users.findIndex(u => u.username === username);
+      if (idx !== -1) {
+        if (updates.password && !updates.password.startsWith('hashed:')) {
+          updates.password = hashPassword(updates.password);
+        }
+        users[idx] = { ...users[idx], ...updates, updatedAt: new Date().toISOString() };
+        localStorage.setItem('factory_users', JSON.stringify(users));
+      }
+      return { success: true };
+    }
+    if (apiResult && apiResult.error) {
+      return { success: false, error: apiResult.error };
+    }
+    // apiResult is null — backend unavailable, fall through to local logic
+  }
+
+  // --- Fallback: local logic (used when backend is disabled or unavailable) ---
   const users = getUsers();
   const idx = users.findIndex(u => u.username === username);
   if (idx !== -1) {
@@ -412,11 +443,6 @@ function updateUser(username, updates) {
     localStorage.setItem('factory_users', JSON.stringify(users));
 
     // Sync password change to Firebase Auth (fire-and-forget)
-    // Note: fbAuthUpdatePassword needs the old password, which we don't have here.
-    // Instead, if the admin is changing a user's password, we create/update the
-    // Firebase Auth account. The user's next login will use the new password via
-    // Firebase Auth's signIn, which will fail, then auto-create with new password.
-    // For a clean sync, we just attempt to create the account with the new password.
     if (rawPassword && users[idx].email && typeof fbAuthCreateUser === 'function') {
       fbAuthCreateUser(users[idx].email, rawPassword).catch(() => {});
     }
@@ -431,7 +457,24 @@ function updateUser(username, updates) {
   return { success: false, error: 'User not found' };
 }
 
-function deleteUserByUsername(username) {
+async function deleteUserByUsername(username) {
+  // --- Try backend API first (handles Firebase Auth deletion + owner protection) ---
+  if (typeof apiCall === 'function') {
+    const apiResult = await apiCall('DELETE', '/api/users/' + encodeURIComponent(username) + '?app=factory');
+    if (apiResult && !apiResult.error) {
+      // Backend succeeded — also remove from localStorage
+      const users = getUsers();
+      const filtered = users.filter(u => u.username !== username);
+      localStorage.setItem('factory_users', JSON.stringify(filtered));
+      return { success: true };
+    }
+    if (apiResult && apiResult.error) {
+      return { success: false, error: apiResult.error };
+    }
+    // apiResult is null — backend unavailable, fall through to local logic
+  }
+
+  // --- Fallback: local logic (used when backend is disabled or unavailable) ---
   // Block deletion of owner accounts (AUTH-10, AUTH-11)
   const ownerUsernames = DEFAULT_USERS.map(u => u.username);
   if (ownerUsernames.includes(username)) {
@@ -448,6 +491,41 @@ function deleteUserByUsername(username) {
 }
 
 async function createUser(userData) {
+  // --- Try backend API first (creates Firebase Auth + Firestore + custom claims) ---
+  if (typeof apiCall === 'function') {
+    const apiResult = await apiCall('POST', '/api/users', {
+      username: userData.username,
+      password: userData.password,
+      name: userData.name,
+      nameHe: userData.nameHe,
+      nameTh: userData.nameTh,
+      email: userData.email,
+      role: userData.role || 'worker',
+      status: userData.status || 'active',
+      app: 'factory',
+    });
+    if (apiResult && !apiResult.error) {
+      // Backend succeeded — also save to localStorage for offline access
+      const hashedPw = (userData.password && !userData.password.startsWith('hashed:'))
+        ? hashPassword(userData.password) : userData.password;
+      const newUser = {
+        ...userData,
+        password: hashedPw,
+        createdAt: new Date().toISOString(),
+        status: userData.status || 'active',
+      };
+      const users = getUsers();
+      users.push(newUser);
+      localStorage.setItem('factory_users', JSON.stringify(users));
+      return { success: true };
+    }
+    if (apiResult && apiResult.error) {
+      return { success: false, error: apiResult.error };
+    }
+    // apiResult is null — backend unavailable, fall through to local logic
+  }
+
+  // --- Fallback: local logic (used when backend is disabled or unavailable) ---
   const users = getUsers();
   if (users.find(u => u.username.toLowerCase() === userData.username.toLowerCase())) {
     return { success: false, error: 'signUpError_userExists' };
