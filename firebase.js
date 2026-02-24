@@ -278,24 +278,31 @@ async function fbAuthSignIn(email, password) {
     console.log('[Firebase] Auth signed in:', email);
     return result.user;
   } catch (e) {
-    if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential') {
-      // User exists locally but not in Firebase Auth — auto-create (lazy migration)
+    // Newer Firebase SDK returns 'auth/invalid-login-credentials' instead of
+    // separate user-not-found / wrong-password codes. Handle all variants.
+    const notFound = [
+      'auth/user-not-found',
+      'auth/invalid-credential',
+      'auth/invalid-login-credentials',
+      'auth/wrong-password',
+    ];
+    if (notFound.includes(e.code)) {
+      // Try auto-create (lazy migration). If the user already exists in
+      // Firebase Auth with a different password, createUser will fail with
+      // email-already-in-use and we return null (wrong password).
       try {
         const result = await _auth.createUserWithEmailAndPassword(email, password);
         console.log('[Firebase] Auth user auto-created:', email);
         return result.user;
       } catch (createErr) {
         if (createErr.code === 'auth/email-already-in-use') {
-          console.warn('[Firebase] Auth password out of sync for', email);
+          // User exists in Firebase Auth but password doesn't match
+          console.warn('[Firebase] Auth password mismatch for', email);
         } else {
           console.warn('[Firebase] Auth create error:', createErr.message);
         }
         return null;
       }
-    }
-    if (e.code === 'auth/wrong-password') {
-      console.warn('[Firebase] Auth password out of sync for', email);
-      return null;
     }
     console.warn('[Firebase] Auth sign-in error:', e.code, e.message);
     return null;

@@ -185,11 +185,9 @@ async function authenticate(emailOrUsername, password) {
         _loginAttempts[key].push(now);
         return null;
       }
-      // fbUser is null — Firebase Auth rejected credentials
-      // Record failed attempt and return null (don't fall through to local check)
-      if (!_loginAttempts[key]) _loginAttempts[key] = [];
-      _loginAttempts[key].push(now);
-      return null;
+      // fbUser is null — Firebase Auth rejected or account doesn't exist yet.
+      // Fall through to local hash check as a safety net.
+      console.warn('[Auth] Firebase Auth returned null, trying local fallback');
     } catch (e) {
       // Firebase Auth threw unexpectedly — fall through to local check
       console.warn('[Auth] Firebase Auth error, falling back to local:', e.message);
