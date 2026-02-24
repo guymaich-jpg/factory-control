@@ -53,7 +53,7 @@ test.describe('Authentication', () => {
 
   test('Enter key submits login form', async ({ page }) => {
     await page.fill('#login-user', 'guymaich@gmail.com');
-    await page.fill('#login-pass', 'Guy1234');
+    await page.fill('#login-pass', 'Guy12345');
     await page.press('#login-pass', 'Enter');
     await expect(page.locator('.app-header')).toBeVisible({ timeout: 5000 });
   });

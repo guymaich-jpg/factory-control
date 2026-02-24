@@ -15,7 +15,7 @@ test.describe('Security: Session Management', () => {
   test('clearing session redirects to login', async ({ page }) => {
     await freshApp(page);
     await page.fill('#login-user', 'guymaich@gmail.com');
-    await page.fill('#login-pass', 'Guy1234');
+    await page.fill('#login-pass', 'Guy12345');
     await page.click('#login-btn');
     await expect(page.locator('.app-header')).toBeVisible();
 

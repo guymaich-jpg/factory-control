@@ -393,7 +393,7 @@ function logInfo(msg) {
       }
 
       if (passwordInput) {
-        await passwordInput.fill('Guy1234');
+        await passwordInput.fill('Guy12345');
         logInfo('Filled password input');
       }
 

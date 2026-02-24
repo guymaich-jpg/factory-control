@@ -55,8 +55,8 @@ The most severe finding is that **the entire authentication system is client-sid
 
 **Description:**
 Two admin accounts with real usernames, email addresses, and plaintext passwords are hardcoded directly in the JavaScript source:
-- `guymaich@gmail.com` / `Guy1234`
-- `yonatangarini@gmail.com` / `Yon1234`
+- `guymaich@gmail.com` / `Guy12345`
+- `yonatangarini@gmail.com` / `Yon12345`
 
 Since this is client-side JavaScript, **any visitor** can open DevTools (or view page source) and read these credentials.
 

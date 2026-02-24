@@ -49,7 +49,7 @@ async function seedTestUsers(page) {
 /**
  * Login with given credentials (email or username)
  */
-async function login(page, emailOrUser = 'guymaich@gmail.com', password = 'Guy1234') {
+async function login(page, emailOrUser = 'guymaich@gmail.com', password = 'Guy12345') {
   await page.fill('#login-user', emailOrUser);
   await page.fill('#login-pass', password);
   await page.click('#login-btn');
@@ -60,7 +60,7 @@ async function login(page, emailOrUser = 'guymaich@gmail.com', password = 'Guy12
  * Login as admin (full access) — uses hardcoded owner account
  */
 async function loginAsAdmin(page) {
-  return login(page, 'guymaich@gmail.com', 'Guy1234');
+  return login(page, 'guymaich@gmail.com', 'Guy12345');
 }
 
 /**
