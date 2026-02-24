@@ -1,10 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const ALLOWED_ORIGINS = [
-  'https://guymaich-jpg.github.io', // both apps on GitHub Pages
-  'http://localhost:8080',           // Factory Control local dev
-  'http://localhost:5173',           // CRM local dev (Vite)
-  'http://localhost:3000',           // alternative local dev
+  'https://guymaich-jpg.github.io',                    // both apps on GitHub Pages
+  'https://aravadistillery-factory-control.vercel.app', // Factory Control on Vercel
+  'http://localhost:8080',                              // Factory Control local dev
+  'http://localhost:5173',                              // CRM local dev (Vite)
+  'http://localhost:3000',                              // alternative local dev
 ];
 
 /**

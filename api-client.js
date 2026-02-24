@@ -10,7 +10,7 @@
 
 // Backend URL — set after deploying to Vercel.
 // Leave empty to disable backend calls (all operations use local fallback).
-const API_BASE = 'https://aravadistillery-backend.vercel.app';
+const API_BASE = 'https://aravadistillery-factory-control.vercel.app';
 
 // Request timeout in milliseconds
 const API_TIMEOUT = 8000;
@@ -92,9 +92,54 @@ async function apiCall(method, path, body) {
   }
 }
 
+// ============================================================
+// User Management API
+// ============================================================
+
 /**
- * Create an invitation via the backend API (fire-and-forget alongside GAS).
- * Returns the result or null if unavailable.
+ * List users from the backend.
+ * Returns { users: [...] } or null if unavailable.
+ */
+async function apiListUsers(app) {
+  var qs = app ? '?app=' + encodeURIComponent(app) : '?app=factory';
+  return apiCall('GET', '/api/users' + qs);
+}
+
+/**
+ * Create a new user via the backend API.
+ * Creates Firebase Auth account + Firestore profile + custom claims.
+ * Returns { success: true, user: {...} } or { error: string } or null.
+ */
+async function apiCreateUser(data) {
+  return apiCall('POST', '/api/users', data);
+}
+
+/**
+ * Update a user via the backend API.
+ * Updates Firestore profile + Firebase Auth (password, role, status).
+ * Returns { success: true } or { error: string } or null.
+ */
+async function apiUpdateUser(username, data) {
+  return apiCall('PUT', '/api/users/' + encodeURIComponent(username), data);
+}
+
+/**
+ * Delete a user via the backend API.
+ * Removes from Firebase Auth + Firestore. Owner-protected.
+ * Returns { success: true } or { error: string } or null.
+ */
+async function apiDeleteUser(username, app) {
+  var qs = app ? '?app=' + encodeURIComponent(app) : '?app=factory';
+  return apiCall('DELETE', '/api/users/' + encodeURIComponent(username) + qs);
+}
+
+// ============================================================
+// Invitation API
+// ============================================================
+
+/**
+ * Create an invitation via the backend API.
+ * Returns { success: true, invitation: {...} } or null.
  */
 async function apiCreateInvitation(data) {
   return apiCall('POST', '/api/invitations', data);
@@ -102,15 +147,52 @@ async function apiCreateInvitation(data) {
 
 /**
  * List invitations from the backend API.
- * Returns { invitations: [...] } or null if unavailable.
+ * Returns { invitations: [...] } or null.
  */
 async function apiListInvitations(app) {
-  var qs = app ? '?app=' + encodeURIComponent(app) : '';
+  var qs = app ? '?app=' + encodeURIComponent(app) : '?app=factory';
   return apiCall('GET', '/api/invitations' + qs);
 }
 
 /**
- * Delete an invitation via the backend API.
+ * Validate an invitation token (public, no auth required).
+ * Returns { valid: true, invitation: {...} } or { valid: false, reason: string }.
+ */
+async function apiValidateInvitation(token, app) {
+  if (!API_BASE) return null;
+  var qs = app ? '&app=' + encodeURIComponent(app) : '&app=factory';
+  try {
+    var res = await fetch(API_BASE + '/api/invitations/' + encodeURIComponent(token) + '?t=1' + qs, {
+      signal: AbortSignal.timeout(5000),
+    });
+    return await res.json();
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * Accept an invitation (public, no auth required — token is the authorization).
+ * Creates Firebase Auth account + Firestore profile.
+ * Returns { success: true, user: {...} } or { error: string }.
+ */
+async function apiAcceptInvitation(data) {
+  if (!API_BASE) return null;
+  try {
+    var res = await fetch(API_BASE + '/api/invitations/accept', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+      signal: AbortSignal.timeout(API_TIMEOUT),
+    });
+    return await res.json();
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * Delete/revoke an invitation via the backend API.
  */
 async function apiDeleteInvitation(id) {
   return apiCall('DELETE', '/api/invitations/' + encodeURIComponent(id));

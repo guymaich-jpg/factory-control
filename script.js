@@ -690,7 +690,7 @@ function bindLogin() {
   }
 }
 
-// Fetch invite details from GAS and bind the registration form
+// Fetch invite details from backend API (primary) or GAS (fallback) and bind the registration form
 function bindInviteRegistration(token) {
   const loadingEl = $('#invite-loading');
   const formWrap = $('#invite-form-wrap');
@@ -706,74 +706,41 @@ function bindInviteRegistration(token) {
     if (retryBtn) retryBtn.style.display = showRetry ? 'inline-block' : 'none';
   }
 
-  // Fetch invite details from GAS
-  const url = SHEETS_SYNC_URL;
-  if (!url) { showError(t('inviteNetworkError'), true); return; }
+  function showForm(email, role) {
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (formWrap) formWrap.style.display = 'block';
+    const emailEl = $('#inv-email');
+    if (emailEl) emailEl.value = email;
 
-  fetch(`${url}?action=getInvite&token=${encodeURIComponent(token)}`)
-    .then(resp => { if (!resp.ok) throw new Error('http'); return resp.json(); })
-    .then(data => {
-      if (data.status === 'not_found') {
-        showError(t('inviteTokenInvalid'), false);
-        return;
-      }
-      if (data.invite && data.invite.inviteStatus === 'accepted') {
-        showError(t('inviteAlreadyUsed'), false);
-        return;
-      }
-      if (data.invite) {
-        // Show form with email pre-filled
-        if (loadingEl) loadingEl.style.display = 'none';
-        if (formWrap) formWrap.style.display = 'block';
-        const emailEl = $('#inv-email');
-        if (emailEl) emailEl.value = data.invite.email;
+    const submitBtn = $('#inv-submit-btn');
+    const errEl = $('#inv-error');
+    const successEl = $('#inv-success');
+    const nameInput = $('#inv-name');
+    const nameHeInput = $('#inv-nameHe');
+    const passInput = $('#inv-password');
 
-        // Bind submit
-        const submitBtn = $('#inv-submit-btn');
-        const errEl = $('#inv-error');
-        const successEl = $('#inv-success');
-        const nameInput = $('#inv-name');
-        const nameHeInput = $('#inv-nameHe');
-        const passInput = $('#inv-password');
+    const doSubmit = async () => {
+      errEl.textContent = '';
+      successEl.textContent = '';
 
-        const doSubmit = async () => {
-          errEl.textContent = '';
-          successEl.textContent = '';
+      const name = nameInput ? nameInput.value.trim() : '';
+      const nameHe = nameHeInput ? nameHeInput.value.trim() : '';
+      const password = passInput ? passInput.value : '';
 
-          const name = nameInput ? nameInput.value.trim() : '';
-          const nameHe = nameHeInput ? nameHeInput.value.trim() : '';
-          const password = passInput ? passInput.value : '';
-          const email = data.invite.email;
+      if (!name) { errEl.textContent = t('signUpError_fillAll'); return; }
+      const pwCheck = validatePassword(password);
+      if (!pwCheck.valid) { errEl.textContent = pwCheck.error; return; }
 
-          if (!name) { errEl.textContent = t('signUpError_fillAll'); return; }
-          const pwCheck = validatePassword(password);
-          if (!pwCheck.valid) { errEl.textContent = pwCheck.error; return; }
+      submitBtn.disabled = true;
 
-          // Generate username from email prefix
-          const baseUsername = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '');
-
-          // Disable button while creating account (async — creates Firebase Auth account)
-          submitBtn.disabled = true;
-          const result = await createUser({
-            username: baseUsername,
-            password: password,
-            name: name,
-            nameHe: nameHe,
-            email: email,
-            role: data.invite.role || 'worker',
-            status: 'active',
-          });
-
-          if (!result.success) {
-            submitBtn.disabled = false;
-            errEl.textContent = t(result.error) || result.error;
-            return;
-          }
-
-          // Notify GAS that invite was accepted (fire-and-forget)
-          notifyInviteAccepted(token, baseUsername);
-
-          // Show success and redirect to login
+      // Try backend accept endpoint first (creates Firebase Auth + Firestore in one call)
+      if (typeof apiAcceptInvitation === 'function') {
+        const apiResult = await apiAcceptInvitation({
+          token, password, name, nameHe, app: 'factory',
+        });
+        if (apiResult && apiResult.success) {
+          // Also notify GAS (fire-and-forget)
+          notifyInviteAccepted(token, apiResult.user ? apiResult.user.username : email.split('@')[0]);
           successEl.textContent = t('inviteAccountCreated');
           setTimeout(() => {
             authMode = 'login';
@@ -781,15 +748,77 @@ function bindInviteRegistration(token) {
             history.replaceState(null, '', location.pathname);
             renderApp();
           }, 2500);
-        };
-
-        if (submitBtn) submitBtn.addEventListener('click', doSubmit);
-        if (passInput) passInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSubmit(); });
+          return;
+        }
+        if (apiResult && apiResult.error) {
+          submitBtn.disabled = false;
+          errEl.textContent = apiResult.error;
+          return;
+        }
+        // apiResult null = backend unavailable, fall through to local creation
       }
-    })
-    .catch(() => {
+
+      // Fallback: create user locally
+      const baseUsername = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '');
+      const result = await createUser({
+        username: baseUsername, password, name, nameHe, email, role: role || 'worker', status: 'active',
+      });
+
+      if (!result.success) {
+        submitBtn.disabled = false;
+        errEl.textContent = t(result.error) || result.error;
+        return;
+      }
+
+      notifyInviteAccepted(token, baseUsername);
+      successEl.textContent = t('inviteAccountCreated');
+      setTimeout(() => {
+        authMode = 'login';
+        _inviteToken = null;
+        history.replaceState(null, '', location.pathname);
+        renderApp();
+      }, 2500);
+    };
+
+    if (submitBtn) submitBtn.addEventListener('click', doSubmit);
+    if (passInput) passInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSubmit(); });
+  }
+
+  // Strategy: try backend API first, then GAS as fallback
+  (async () => {
+    // 1. Try backend API
+    if (typeof apiValidateInvitation === 'function') {
+      try {
+        const result = await apiValidateInvitation(token, 'factory');
+        if (result) {
+          if (result.valid === false) {
+            showError(result.reason === 'Invitation already used' ? t('inviteAlreadyUsed') : t('inviteTokenInvalid'), false);
+            return;
+          }
+          if (result.valid && result.invitation) {
+            showForm(result.invitation.email, result.invitation.role);
+            return;
+          }
+        }
+      } catch (e) { /* fall through to GAS */ }
+    }
+
+    // 2. Fallback: fetch from GAS
+    const url = SHEETS_SYNC_URL;
+    if (!url) { showError(t('inviteNetworkError'), true); return; }
+
+    try {
+      const resp = await fetch(`${url}?action=getInvite&token=${encodeURIComponent(token)}`);
+      if (!resp.ok) throw new Error('http');
+      const data = await resp.json();
+
+      if (data.status === 'not_found') { showError(t('inviteTokenInvalid'), false); return; }
+      if (data.invite && data.invite.inviteStatus === 'accepted') { showError(t('inviteAlreadyUsed'), false); return; }
+      if (data.invite) { showForm(data.invite.email, data.invite.role); }
+    } catch (e) {
       showError(t('inviteNetworkError'), true);
-    });
+    }
+  })();
 
   // Retry button
   if (retryBtn) {
@@ -2021,6 +2050,16 @@ function renderBackoffice(container) {
     return;
   }
 
+  // Sync users from backend in background (updates localStorage, then re-renders)
+  if (typeof syncUsersFromBackend === 'function' && !container._syncStarted) {
+    container._syncStarted = true;
+    syncUsersFromBackend().then(synced => {
+      if (synced && synced.length !== getUsers().length) {
+        renderBackoffice(container); // re-render with merged data
+      }
+    }).catch(() => {});
+  }
+
   const users = getUsers();
 
   if (currentView === 'form') {
@@ -2257,7 +2296,7 @@ function renderBackoffice(container) {
   loadInvitationsList(container);
 }
 
-// Fetch invitations from GAS and render them in the backoffice
+// Fetch invitations from backend API (primary) or GAS (fallback) and render
 function loadInvitationsList(container) {
   const listEl = container.querySelector('#invitations-list');
   if (!listEl) return;
@@ -2266,7 +2305,33 @@ function loadInvitationsList(container) {
   const localInvites = getInvitations();
   renderInvitationItems(listEl, localInvites);
 
-  // Then fetch from GAS for latest status
+  // Try backend API first
+  if (typeof apiListInvitations === 'function') {
+    apiListInvitations('factory').then(result => {
+      if (result && result.invitations) {
+        // Map backend format to local format
+        const mapped = result.invitations.map(inv => ({
+          token: inv.token || inv._fbId,
+          email: inv.email,
+          role: inv.role,
+          status: inv.status,
+          sentAt: inv.createdAt || inv.sentAt,
+          sentBy: inv.createdBy || inv.sentBy || '',
+          username: inv.username || '',
+        }));
+        saveInvitations(mapped);
+        renderInvitationItems(listEl, mapped);
+        return; // backend succeeded, skip GAS
+      }
+      // Backend returned null (unavailable) — fallback to GAS
+      fetchInvitationsFromGAS(listEl);
+    }).catch(() => fetchInvitationsFromGAS(listEl));
+  } else {
+    fetchInvitationsFromGAS(listEl);
+  }
+}
+
+function fetchInvitationsFromGAS(listEl) {
   const url = SHEETS_SYNC_URL;
   if (!url) return;
 
@@ -2274,14 +2339,11 @@ function loadInvitationsList(container) {
     .then(resp => { if (!resp.ok) throw new Error('http'); return resp.json(); })
     .then(data => {
       if (data.status === 'ok' && Array.isArray(data.invites)) {
-        // Update local cache with GAS data
         saveInvitations(data.invites);
         renderInvitationItems(listEl, data.invites);
       }
     })
-    .catch(() => {
-      // Keep showing local data on network failure
-    });
+    .catch(() => {});
 }
 
 function renderInvitationItems(listEl, invites) {
@@ -2331,6 +2393,11 @@ function deleteInvitation(token, listEl) {
   const invites = getInvitations().filter(i => i.token !== token);
   saveInvitations(invites);
   renderInvitationItems(listEl, invites);
+
+  // Remove from backend API (fire-and-forget)
+  if (typeof apiDeleteInvitation === 'function') {
+    apiDeleteInvitation(token).catch(() => {});
+  }
 
   // Remove from GAS (fire-and-forget)
   const url = SHEETS_SYNC_URL;

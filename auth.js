@@ -134,6 +134,41 @@ function getUsers() {
   return users;
 }
 
+/**
+ * Fetch users from the backend API and merge into localStorage.
+ * Call this when the Settings/user-management screen opens.
+ * Returns the merged user list.
+ */
+async function syncUsersFromBackend() {
+  if (typeof apiListUsers !== 'function') return getUsers();
+  try {
+    const result = await apiListUsers('factory');
+    if (!result || result.error || !result.users) return getUsers();
+
+    const localUsers = getUsers();
+    const merged = [...localUsers];
+
+    // Merge backend users into local list (backend is source of truth for non-owner accounts)
+    for (const remote of result.users) {
+      const idx = merged.findIndex(u => u.username === remote.username);
+      if (idx !== -1) {
+        // Update local with backend data (keep local password hash for offline auth)
+        const localPw = merged[idx].password;
+        merged[idx] = { ...merged[idx], ...remote, password: localPw };
+      } else {
+        // New user from backend — add to local (no password stored locally)
+        merged.push({ ...remote, password: null });
+      }
+    }
+
+    localStorage.setItem('factory_users', JSON.stringify(merged));
+    return merged;
+  } catch (e) {
+    console.warn('[Auth] syncUsersFromBackend error:', e.message);
+    return getUsers();
+  }
+}
+
 // Authenticate by email (primary) or username, with password.
 // Strategy: Firebase Auth is source of truth for passwords.
 //   1. Try Firebase Auth first (signInWithEmailAndPassword)
