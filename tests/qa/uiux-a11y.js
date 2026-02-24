@@ -12,7 +12,7 @@ const { chromium } = require('playwright');
 const path = require('path');
 const fs = require('fs');
 
-const TARGET_URL = 'https://guymaich-jpg.github.io/Aravadistillery-Factory-Control/';
+const TARGET_URL = process.env.TARGET_URL || 'https://guymaich-jpg.github.io/Aravadistillery-Factory-Control/';
 const SCREENSHOTS_DIR = path.join(__dirname, 'screenshots');
 
 // Ensure screenshots directory exists

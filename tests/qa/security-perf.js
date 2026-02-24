@@ -4,7 +4,7 @@
 // ============================================================
 const { chromium } = require('playwright');
 
-const TARGET_URL = 'https://guymaich-jpg.github.io/Aravadistillery-Factory-Control/';
+const TARGET_URL = process.env.TARGET_URL || 'https://guymaich-jpg.github.io/Aravadistillery-Factory-Control/';
 
 // Helpers
 function header(title) {
