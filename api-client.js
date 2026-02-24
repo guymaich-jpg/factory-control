@@ -82,11 +82,6 @@ async function apiCall(method, path, body) {
     return await res.json();
   } catch (e) {
     clearTimeout(timeout);
-    if (e.name === 'AbortError') {
-      console.warn('[API] Backend request timed out:', path);
-    } else {
-      console.warn('[API] Backend call failed, using local fallback:', e.message);
-    }
     _backendAvailable = false;
     return null; // null signals backend unavailable — caller should fall back
   }

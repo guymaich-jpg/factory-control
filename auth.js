@@ -164,7 +164,6 @@ async function syncUsersFromBackend() {
     localStorage.setItem('factory_users', JSON.stringify(merged));
     return merged;
   } catch (e) {
-    console.warn('[Auth] syncUsersFromBackend error:', e.message);
     return getUsers();
   }
 }
@@ -222,10 +221,10 @@ async function authenticate(emailOrUsername, password) {
       }
       // fbUser is null — Firebase Auth rejected or account doesn't exist yet.
       // Fall through to local hash check as a safety net.
-      console.warn('[Auth] Firebase Auth returned null, trying local fallback');
+      // Firebase Auth rejected — fall through to local hash check
     } catch (e) {
       // Firebase Auth threw unexpectedly — fall through to local check
-      console.warn('[Auth] Firebase Auth error, falling back to local:', e.message);
+      // Firebase Auth unavailable — fall through to local check
     }
   }
 
@@ -584,9 +583,7 @@ async function createUser(userData) {
   if (userData.email && typeof fbAuthCreateUser === 'function') {
     const fbResult = await fbAuthCreateUser(userData.email, userData.password);
     // fbResult is user object, 'exists', or null — proceed regardless
-    if (fbResult && fbResult !== 'exists') {
-      console.log('[Auth] Firebase Auth account created for', userData.email);
-    }
+    // fbResult is user object, 'exists', or null — proceed regardless
   }
 
   // Hash password before storing locally (AUTH-01)

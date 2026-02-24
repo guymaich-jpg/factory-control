@@ -135,28 +135,21 @@ let _syncQueue = 0;
 // Sends a POST to GAS. Always fire-and-forget (no-cors), with 1 retry and console logging.
 async function postToSheets(payload) {
   const url = SHEETS_SYNC_URL;
-  if (!url) {
-    console.warn('[sync] No GAS URL configured — skipping sync');
-    return;
-  }
+  if (!url) return;
 
   _syncQueue++;
   updateSyncIndicator('syncing');
 
   const attempt = async (n) => {
     try {
-      console.log(`[sync] POST attempt ${n + 1}:`, payload.sheetName, payload.action || 'replace', `(${(payload.records || []).length} records)`);
       await fetch(url, {
         method: 'POST',
         body: JSON.stringify(payload),
         mode: 'no-cors',
       });
-      console.log(`[sync] POST sent:`, payload.sheetName);
       return true;
     } catch (err) {
-      console.error(`[sync] POST failed (attempt ${n + 1}):`, err.message);
       if (n < 1) {
-        console.log('[sync] Retrying in 2s...');
         await new Promise(r => setTimeout(r, 2000));
         return attempt(n + 1);
       }
@@ -186,7 +179,6 @@ async function verifySyncStatus(sheetName) {
     const data = await resp.json();
     return { verified: true, ...data };
   } catch (err) {
-    console.warn('[sync] Verification failed for', sheetName, err.message);
     return { verified: false, error: err.message };
   }
 }
@@ -660,7 +652,6 @@ function bindLogin() {
           errEl.textContent = t('loginError');
         }
       } catch (e) {
-        console.error('[Auth] Login error:', e);
         errEl.textContent = t('loginError');
       } finally {
         loginBtn.disabled = false;
@@ -2168,7 +2159,6 @@ function renderBackoffice(container) {
       // Wait for GAS to process, then verify via GET
       await new Promise(r => setTimeout(r, 4000));
       const check = await verifySyncStatus(t('mod_bottling'));
-      console.log('[sync] Sync All verification:', check);
 
       syncAllBtn.disabled = false;
       syncAllBtn.innerHTML = origHtml;
@@ -2516,7 +2506,6 @@ function renderUserForm(container) {
     const passwordInput = container.querySelector('#bo-password');
     const nameInput = container.querySelector('#bo-name');
     const nameHeInput = container.querySelector('#bo-nameHe');
-    const nameThInput = container.querySelector('#bo-nameTh');
     const roleInput = container.querySelector('#bo-role');
     const statusInput = container.querySelector('#bo-status');
 
@@ -2524,7 +2513,6 @@ function renderUserForm(container) {
     const password = passwordInput ? passwordInput.value : '';
     const name = nameInput ? nameInput.value.trim() : '';
     const nameHe = nameHeInput ? nameHeInput.value.trim() : '';
-    const nameTh = nameThInput ? nameThInput.value.trim() : '';
     const role = roleInput ? roleInput.value : '';
     const status = statusInput ? statusInput.value : 'active';
 
@@ -2537,7 +2525,7 @@ function renderUserForm(container) {
 
     if (isEdit) {
       // Update
-      const updates = { name, nameHe, nameTh, role, status };
+      const updates = { name, nameHe, role, status };
       if (password) updates.password = password;
 
       const res = await updateUser(username, updates);
@@ -2552,7 +2540,7 @@ function renderUserForm(container) {
       }
     } else {
       // Create (async — may create Firebase Auth account)
-      const res = await createUser({ username, password, name, nameHe, nameTh, role, status });
+      const res = await createUser({ username, password, name, nameHe, role, status });
       if (res.success) {
         showToast(t('signUpSuccess'));
         currentView = 'list';

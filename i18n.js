@@ -48,6 +48,7 @@ const I18N = {
     password: "Password",
     login: "Log In",
     loginError: "Invalid email or password",
+    loginLocked: "Too many failed attempts. Try again in 15 minutes.",
     emailAddress: "Email Address",
     requestAccess: "Request Access",
     requestAccessTitle: "Request Access",
@@ -72,6 +73,7 @@ const I18N = {
     fullName: "Full Name",
     signUpError_userExists: "Username already taken",
     signUpError_fillAll: "Please fill in all fields",
+    signUpSuccess: "Account created successfully!",
 
     // ---------- Invitation System ----------
     inviteUser: "Invite User",
@@ -161,7 +163,6 @@ const I18N = {
     spirit_noData: "No distillation records yet.",
 
     // Settings
-    settings: "Settings",
     dataExport: "Data Backup",
     exportAllData: "Export Full Database (CSV)",
     confirmExport: "Download full database backup?",
@@ -388,6 +389,7 @@ const I18N = {
     password: "סיסמה",
     login: "התחבר",
     loginError: "אימייל או סיסמה שגויים",
+    loginLocked: "יותר מדי ניסיונות כושלים. נסה שוב בעוד 15 דקות.",
     emailAddress: "כתובת אימייל",
     requestAccess: "בקש גישה",
     requestAccessTitle: "בקשת גישה",
@@ -412,6 +414,7 @@ const I18N = {
     fullName: "שם מלא",
     signUpError_userExists: "שם המשתמש כבר תפוס",
     signUpError_fillAll: "נא למלא את כל השדות",
+    signUpSuccess: "החשבון נוצר בהצלחה!",
 
     // ---------- מערכת הזמנות ----------
     inviteUser: "הזמן משתמש",
@@ -452,7 +455,6 @@ const I18N = {
     permissionsRules: "הרשאות וכללים",
 
     // ---------- Backoffice ----------
-    settings: "הגדרות",
     dataExport: "גיבוי נתונים",
     exportAllData: "ייצא מסד נתונים מלא (CSV)",
     confirmExport: "להוריד גיבוי מלא?",
