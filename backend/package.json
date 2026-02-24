@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "vercel dev",
-    "build": "tsc --noEmit && mkdir -p public",
+    "build": "tsc --noEmit && mkdir -p public && echo '{}' > public/index.json",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
