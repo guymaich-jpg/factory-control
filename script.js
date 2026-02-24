@@ -124,7 +124,7 @@ function showToast(msg) {
 // ============================================================
 // GOOGLE SHEETS SYNC
 // ============================================================
-const SHEETS_SYNC_URL = 'https://script.google.com/macros/s/AKfycbyMJ9pWds3hN3Oup_X-gwyDq0mX_CECdldtXcGXSn8-RsRDC6JNLhhPLoDSPXvjVK3O/exec';
+const SHEETS_SYNC_URL = 'https://script.google.com/macros/s/AKfycbz4IIUXvDoo7qJH1Ytn7hEWZ85Ek7hViA6riSezMZCXQbjKQG3VwfppQlq0kuTwOHT3/exec';
 const INVENTORY_SHEET_URL = 'https://docs.google.com/spreadsheets/d/14rYu6QgRD2r4X4ZjOs45Rqtl4p0XOPvJfcs5BpY54EE/edit?gid=1634965365#gid=1634965365';
 
 // Sync state for the visual indicator
@@ -412,7 +412,7 @@ function showManagerPasswordModal(onSuccess) {
     <div class="manager-pwd-dialog">
       <div class="mpd-title"><i data-feather="lock" style="width:20px;height:20px;margin-inline-end:8px;"></i>${t('deleteConfirmTitle')}</div>
       <p class="mpd-subtitle">${t('deleteConfirmSubtitle')}</p>
-      <input type="password" class="form-input mpd-input" id="mpd-password" placeholder="${t('managerPasswordPlaceholder')}" autocomplete="current-password">
+      <input type="password" class="form-input mpd-input" id="mpd-password" placeholder="${t('managerPasswordPlaceholder')}" aria-label="${t('managerPasswordPlaceholder')}" autocomplete="current-password">
       <div class="mpd-error" id="mpd-error"></div>
       <div class="mpd-actions">
         <button class="btn btn-secondary mpd-cancel">${t('cancel')}</button>
@@ -556,14 +556,14 @@ function renderLogin() {
       <div class="login-form">
         <div class="field">
           <input type="email" id="login-user" placeholder="${t('emailAddress')}"
-            autocomplete="email" autocapitalize="none" spellcheck="false">
+            aria-label="${t('emailAddress')}" autocomplete="email" autocapitalize="none" spellcheck="false">
         </div>
         <div class="field">
           <input type="password" id="login-pass" placeholder="${t('password')}"
-            autocomplete="current-password">
+            aria-label="${t('password')}" autocomplete="current-password">
         </div>
         <button class="login-btn" id="login-btn">${t('login')}</button>
-        <div class="login-error" id="login-error"></div>
+        <div class="login-error" id="login-error" role="alert" aria-live="polite"></div>
       </div>
     </div>
   `;
@@ -595,24 +595,24 @@ function renderInviteRegistration() {
       <div id="invite-form-wrap" class="login-form" style="display:none;">
         <div class="field">
           <input type="email" id="inv-email" placeholder="${t('emailAddress')}" disabled
-            class="invite-email-locked" autocomplete="email">
+            aria-label="${t('emailAddress')}" class="invite-email-locked" autocomplete="email">
         </div>
         <div class="field">
-          <input type="text" id="inv-name" placeholder="${t('nameEnglish')}" autocomplete="name">
+          <input type="text" id="inv-name" placeholder="${t('nameEnglish')}" aria-label="${t('nameEnglish')}" autocomplete="name">
         </div>
         <div class="field">
-          <input type="text" id="inv-nameHe" placeholder="${t('nameHebrew')}" dir="rtl" autocomplete="off">
+          <input type="text" id="inv-nameHe" placeholder="${t('nameHebrew')}" aria-label="${t('nameHebrew')}" dir="rtl" autocomplete="off">
         </div>
         <div class="field">
-          <input type="password" id="inv-password" placeholder="${t('password')}" autocomplete="new-password">
+          <input type="password" id="inv-password" placeholder="${t('password')}" aria-label="${t('password')}" autocomplete="new-password">
         </div>
         <button class="login-btn" id="inv-submit-btn">${t('createAccount')}</button>
-        <div class="login-error" id="inv-error"></div>
-        <div class="login-success" id="inv-success"></div>
+        <div class="login-error" id="inv-error" role="alert" aria-live="polite"></div>
+        <div class="login-success" id="inv-success" role="status" aria-live="polite"></div>
       </div>
 
       <div id="invite-error-wrap" style="display:none;text-align:center;padding:24px 0;">
-        <p class="login-error" id="inv-token-error" style="display:block"></p>
+        <p class="login-error" id="inv-token-error" role="alert" aria-live="polite" style="display:block"></p>
         <button class="login-btn" id="inv-retry-btn" style="margin-top:12px;display:none">${t('inviteRetry')}</button>
       </div>
 
@@ -2043,7 +2043,7 @@ function renderBackoffice(container) {
       <div style="display:flex;gap:8px;align-items:flex-end;">
         <div style="flex:1;">
           <input type="email" class="form-input" id="invite-email" placeholder="${t('inviteEmailPlaceholder')}"
-            autocomplete="off" autocapitalize="none" spellcheck="false" style="margin:0;">
+            aria-label="${t('inviteEmailPlaceholder')}" autocomplete="off" autocapitalize="none" spellcheck="false" style="margin:0;">
         </div>
         <select class="form-select" id="invite-role" style="width:auto;min-width:100px;margin:0;">
           <option value="worker">${t('role_worker')}</option>
@@ -2054,8 +2054,8 @@ function renderBackoffice(container) {
       <button class="btn btn-primary" id="btn-send-invite" style="margin-top:10px;width:100%;">
         <i data-feather="send"></i> ${t('sendInvitation')}
       </button>
-      <div class="login-error" id="invite-error" style="margin-top:8px;"></div>
-      <div class="login-success" id="invite-success" style="margin-top:8px;"></div>
+      <div class="login-error" id="invite-error" role="alert" aria-live="polite" style="margin-top:8px;"></div>
+      <div class="login-success" id="invite-success" role="status" aria-live="polite" style="margin-top:8px;"></div>
     </div>
 
     <div style="margin-top:24px;">
@@ -2373,7 +2373,7 @@ function renderUserForm(container) {
         </select>
       </div>
 
-      <div class="login-error" id="bo-error"></div>
+      <div class="login-error" id="bo-error" role="alert" aria-live="polite"></div>
 
       <div class="form-actions">
         <button class="btn btn-secondary" id="bo-cancel">${t('cancel')}</button>
