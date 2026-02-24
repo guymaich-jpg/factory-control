@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "vercel dev",
-    "build": "tsc --noEmit",
+    "build": "tsc --noEmit && mkdir -p public",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
