@@ -139,8 +139,11 @@ function getUsers() {
   return users;
 }
 
-// Authenticate by email (primary) or username, with password
-function authenticate(emailOrUsername, password) {
+// Authenticate by email (primary) or username, with password.
+// Returns a Promise that resolves to: session object | { locked: true } | null.
+// Uses Firebase Auth as the primary authenticator when available;
+// falls back to local hash check when Firebase is unavailable.
+async function authenticate(emailOrUsername, password) {
   // --- Rate limiting check (AUTH-06) ---
   const key = emailOrUsername.toLowerCase();
   const now = Date.now();
@@ -148,7 +151,6 @@ function authenticate(emailOrUsername, password) {
   const MAX_ATTEMPTS = 5;
 
   if (_loginAttempts[key]) {
-    // Clean up old attempts outside the window
     _loginAttempts[key] = _loginAttempts[key].filter(t => (now - t) < RATE_LIMIT_WINDOW);
     if (_loginAttempts[key].length >= MAX_ATTEMPTS) {
       return { locked: true };
@@ -156,57 +158,72 @@ function authenticate(emailOrUsername, password) {
   }
 
   const users = getUsers();
-  const hashedInput = hashPassword(password);
 
-  const user = users.find(u => {
+  // --- Find user record in local DB (for role / permissions) ---
+  const findUser = () => users.find(u => {
     if (u.status === 'inactive') return false;
-    const matchesIdentity =
-      (u.email && u.email.toLowerCase() === key) ||
-      u.username.toLowerCase() === key;
-    if (!matchesIdentity) return false;
-
-    // Check password: support hashed and legacy plaintext
-    if (u.password && u.password.startsWith('hashed:')) {
-      // Stored password is hashed — compare hashed input
-      return u.password === hashedInput;
-    } else {
-      // Legacy plaintext — compare directly, then upgrade
-      if (u.password === password) {
-        return true;
-      }
-      return false;
-    }
+    return (u.email && u.email.toLowerCase() === key) ||
+           u.username.toLowerCase() === key;
   });
 
-  if (user) {
+  let user = null;
+
+  // --- Strategy 1: Firebase Auth (primary) ---
+  if (typeof fbAuthSignIn === 'function' && typeof _firebaseReady !== 'undefined' && _firebaseReady) {
+    const email = findUser()?.email || emailOrUsername;
+    try {
+      const fbUser = await fbAuthSignIn(email, password);
+      if (fbUser) {
+        user = findUser();
+      }
+    } catch (_) {
+      // Firebase auth failed — will fall through to local check
+    }
+  }
+
+  // --- Strategy 2: Local hash check (fallback when Firebase unavailable) ---
+  if (!user) {
+    const hashedInput = hashPassword(password);
+    user = users.find(u => {
+      if (u.status === 'inactive') return false;
+      const matchesIdentity =
+        (u.email && u.email.toLowerCase() === key) ||
+        u.username.toLowerCase() === key;
+      if (!matchesIdentity) return false;
+
+      if (u.password && u.password.startsWith('hashed:')) {
+        return u.password === hashedInput;
+      } else {
+        return u.password === password;
+      }
+    });
+
     // Upgrade legacy plaintext password to hashed (AUTH-01)
-    if (user.password && !user.password.startsWith('hashed:')) {
+    if (user && user.password && !user.password.startsWith('hashed:')) {
       const idx = users.findIndex(u => u.username === user.username);
       if (idx !== -1) {
-        users[idx].password = hashedInput;
+        users[idx].password = hashPassword(password);
         localStorage.setItem('factory_users', JSON.stringify(users));
       }
     }
 
-    // Reset rate limiting on success
-    delete _loginAttempts[key];
+    // If local auth passed but Firebase Auth didn't fire above, sign in async
+    if (user && user.email && typeof fbAuthSignIn === 'function') {
+      fbAuthSignIn(user.email, password).catch(() => {});
+    }
+  }
 
+  if (user) {
+    delete _loginAttempts[key];
     const session = { ...user, loginTime: Date.now(), lastActivity: Date.now() };
     delete session.password;
     localStorage.setItem('factory_session', JSON.stringify(session));
-
-    // Sign in to Firebase Auth (enables Firestore security rules)
-    if (user.email && typeof fbAuthSignIn === 'function') {
-      fbAuthSignIn(user.email, password).catch(() => {});
-    }
-
     return session;
   }
 
-  // Record failed attempt for rate limiting
+  // Record failed attempt
   if (!_loginAttempts[key]) _loginAttempts[key] = [];
   _loginAttempts[key].push(now);
-
   return null;
 }
 

@@ -3157,7 +3157,7 @@ function getUsers() {
 }
 
 // Authenticate by email (primary) or username, with password
-function authenticate(emailOrUsername, password) {
+async function authenticate(emailOrUsername, password) {
   const users = getUsers();
   const user = users.find(u =>
     u.status !== 'inactive' &&
@@ -4171,17 +4171,25 @@ function bindLogin() {
     const passInput = $('#login-pass');
     const errEl = $('#login-error');
 
-    const doLogin = () => {
+    const doLogin = async () => {
       const email = userInput.value.trim();
       const pass = passInput.value;
       if (!email || !pass) return;
-      const session = authenticate(email, pass);
-      if (session) {
-        currentScreen = 'dashboard';
-        currentModule = null;
-        renderApp();
-      } else {
+      if (loginBtn) loginBtn.disabled = true;
+      errEl.textContent = '';
+      try {
+        const session = await authenticate(email, pass);
+        if (session) {
+          currentScreen = 'dashboard';
+          currentModule = null;
+          renderApp();
+        } else {
+          errEl.textContent = t('loginError');
+        }
+      } catch (_) {
         errEl.textContent = t('loginError');
+      } finally {
+        if (loginBtn) loginBtn.disabled = false;
       }
     };
 

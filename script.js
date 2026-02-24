@@ -631,25 +631,34 @@ function bindLogin() {
     const passInput = $('#login-pass');
     const errEl = $('#login-error');
 
-    const doLogin = () => {
+    const doLogin = async () => {
       const email = userInput.value.trim();
       const pass = passInput.value;
       if (!email || !pass) return;
-      const session = authenticate(email, pass);
-      if (session && session.locked) {
-        const lockErrEl = document.querySelector('.login-error') || document.querySelector('#login-error');
-        if (lockErrEl) {
-          lockErrEl.textContent = t('loginLocked') || 'Too many failed attempts. Try again in 15 minutes.';
-          lockErrEl.style.display = 'block';
+      // Disable button while authenticating
+      if (loginBtn) loginBtn.disabled = true;
+      errEl.textContent = '';
+      try {
+        const session = await authenticate(email, pass);
+        if (session && session.locked) {
+          const lockErrEl = document.querySelector('.login-error') || document.querySelector('#login-error');
+          if (lockErrEl) {
+            lockErrEl.textContent = t('loginLocked') || 'Too many failed attempts. Try again in 15 minutes.';
+            lockErrEl.style.display = 'block';
+          }
+          return;
         }
-        return;
-      }
-      if (session) {
-        currentScreen = 'dashboard';
-        currentModule = null;
-        renderApp();
-      } else {
+        if (session) {
+          currentScreen = 'dashboard';
+          currentModule = null;
+          renderApp();
+        } else {
+          errEl.textContent = t('loginError');
+        }
+      } catch (_) {
         errEl.textContent = t('loginError');
+      } finally {
+        if (loginBtn) loginBtn.disabled = false;
       }
     };
 
@@ -750,6 +759,11 @@ function bindInviteRegistration(token) {
           if (!result.success) {
             errEl.textContent = t(result.error) || result.error;
             return;
+          }
+
+          // Create Firebase Auth account for the new user
+          if (typeof fbAuthSignIn === 'function') {
+            fbAuthSignIn(email, password).catch(() => {});
           }
 
           // Notify GAS that invite was accepted (fire-and-forget)
