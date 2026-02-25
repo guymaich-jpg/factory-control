@@ -198,9 +198,19 @@ async function apiDeleteInvitation(id) {
 // ============================================================
 
 /**
- * Get current bottle inventory computed from factory_bottling records.
+ * Get current bottle inventory.
  * Returns { bottles: { drink_arak: N, ... }, total: N, updatedAt: string } or null.
  */
 async function apiGetInventory() {
   return apiCall('GET', '/api/inventory');
+}
+
+/**
+ * Push an inventory snapshot to the backend.
+ * Called by syncInventorySnapshot() after every record change.
+ * The backend writes to factory_inventory/current so the CRM can read it.
+ * Returns { success: true, ... } or null if backend unavailable.
+ */
+async function apiUpdateInventory(bottles, trigger) {
+  return apiCall('POST', '/api/inventory', { bottles: bottles, trigger: trigger });
 }

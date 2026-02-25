@@ -326,12 +326,36 @@ function toggleTheme() {
   if (typeof feather !== 'undefined') feather.replace();
 }
 
+// Sync bottle counts to the CRM stockLevels Firestore collection.
+// Called as fallback when the backend API is unavailable.
+// CRM products: 1=ערק, 2=ליקריץ, 3=ADV, 4=ג'ין, 5=ברנדי
+function syncCrmStockLevels(bottleInv) {
+  if (typeof fbSetDoc !== 'function') return;
+  var DRINK_TO_CRM = {
+    drink_arak: '1', drink_licorice: '2', drink_edv: '3', drink_gin: '4',
+    drink_brandyVS: '5', drink_brandyVSOP: '5', drink_brandyMed: '5',
+  };
+  var aggregated = {};
+  Object.keys(bottleInv).forEach(function(dt) {
+    var pid = DRINK_TO_CRM[dt];
+    if (!pid) return;
+    aggregated[pid] = (aggregated[pid] || 0) + (bottleInv[dt] || 0);
+  });
+  var now = new Date().toISOString();
+  Object.keys(aggregated).forEach(function(productId) {
+    fbSetDoc('stockLevels', productId, {
+      productId: productId,
+      currentStock: aggregated[productId],
+      unit: 'בקבוק',
+      lastUpdated: now,
+      factoryLastSync: now,
+    });
+  });
+}
+
 // Append a timestamped inventory snapshot row to the Sheets Inventory ledger.
 // Called automatically after any record is saved, updated, or deleted.
 function syncInventorySnapshot(triggeredBy) {
-  const url = SHEETS_SYNC_URL;
-  if (!url) return;
-
   const bottlingRecords = getData(STORE_KEYS.bottling);
   const rawRecords = getData(STORE_KEYS.rawMaterials);
   const dateRecords = getData(STORE_KEYS.dateReceiving);
@@ -382,23 +406,52 @@ function syncInventorySnapshot(triggeredBy) {
     ...DRINK_TYPES.map(dt => t(dt)),
   ];
 
-  postToSheets({
-    sheetName: t('mod_inventory'),
-    action: 'append',
-    keys,
-    labels,
-    records: [record],
-  });
+  if (SHEETS_SYNC_URL) {
+    postToSheets({
+      sheetName: t('mod_inventory'),
+      action: 'append',
+      keys,
+      labels,
+      records: [record],
+    });
+  }
 
-  // Write bottle inventory to Firestore for CRM real-time reads
-  const inventoryDoc = {
-    bottles: { ...bottleInv },
-    total: Object.values(bottleInv).reduce((s, v) => s + v, 0),
-    updatedAt: new Date().toISOString(),
-    updatedBy: session?.username || 'system',
-    trigger: triggeredBy || 'save',
-  };
-  fbSetDoc('factory_inventory', 'current', inventoryDoc);
+  // Push inventory to backend for CRM reads (backend writes to Firestore)
+  if (typeof apiUpdateInventory === 'function') {
+    apiUpdateInventory(bottleInv, triggeredBy || 'save').then(function(result) {
+      if (!result) {
+        // Backend unavailable — write directly to Firestore as fallback
+        fbSetDoc('factory_inventory', 'current', {
+          bottles: { ...bottleInv },
+          total: Object.values(bottleInv).reduce((s, v) => s + v, 0),
+          updatedAt: new Date().toISOString(),
+          updatedBy: session?.username || 'system',
+          trigger: triggeredBy || 'save',
+        });
+        syncCrmStockLevels(bottleInv);
+      }
+    }).catch(function() {
+      // Backend call failed — write directly to Firestore as fallback
+      fbSetDoc('factory_inventory', 'current', {
+        bottles: { ...bottleInv },
+        total: Object.values(bottleInv).reduce((s, v) => s + v, 0),
+        updatedAt: new Date().toISOString(),
+        updatedBy: session?.username || 'system',
+        trigger: triggeredBy || 'save',
+      });
+      syncCrmStockLevels(bottleInv);
+    });
+  } else {
+    // api-client not loaded — write directly to Firestore
+    fbSetDoc('factory_inventory', 'current', {
+      bottles: { ...bottleInv },
+      total: Object.values(bottleInv).reduce((s, v) => s + v, 0),
+      updatedAt: new Date().toISOString(),
+      updatedBy: session?.username || 'system',
+      trigger: triggeredBy || 'save',
+    });
+    syncCrmStockLevels(bottleInv);
+  }
 }
 
 // ---- Manager Password Modal (required for any delete action) ----
