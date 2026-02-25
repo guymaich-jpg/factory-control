@@ -329,9 +329,6 @@ function toggleTheme() {
 // Append a timestamped inventory snapshot row to the Sheets Inventory ledger.
 // Called automatically after any record is saved, updated, or deleted.
 function syncInventorySnapshot(triggeredBy) {
-  const url = SHEETS_SYNC_URL;
-  if (!url) return;
-
   const bottlingRecords = getData(STORE_KEYS.bottling);
   const rawRecords = getData(STORE_KEYS.rawMaterials);
   const dateRecords = getData(STORE_KEYS.dateReceiving);
@@ -382,23 +379,49 @@ function syncInventorySnapshot(triggeredBy) {
     ...DRINK_TYPES.map(dt => t(dt)),
   ];
 
-  postToSheets({
-    sheetName: t('mod_inventory'),
-    action: 'append',
-    keys,
-    labels,
-    records: [record],
-  });
+  if (SHEETS_SYNC_URL) {
+    postToSheets({
+      sheetName: t('mod_inventory'),
+      action: 'append',
+      keys,
+      labels,
+      records: [record],
+    });
+  }
 
-  // Write bottle inventory to Firestore for CRM real-time reads
-  const inventoryDoc = {
-    bottles: { ...bottleInv },
-    total: Object.values(bottleInv).reduce((s, v) => s + v, 0),
-    updatedAt: new Date().toISOString(),
-    updatedBy: session?.username || 'system',
-    trigger: triggeredBy || 'save',
-  };
-  fbSetDoc('factory_inventory', 'current', inventoryDoc);
+  // Push inventory to backend for CRM reads (backend writes to Firestore)
+  if (typeof apiUpdateInventory === 'function') {
+    apiUpdateInventory(bottleInv, triggeredBy || 'save').then(function(result) {
+      if (!result) {
+        // Backend unavailable — write directly to Firestore as fallback
+        fbSetDoc('factory_inventory', 'current', {
+          bottles: { ...bottleInv },
+          total: Object.values(bottleInv).reduce((s, v) => s + v, 0),
+          updatedAt: new Date().toISOString(),
+          updatedBy: session?.username || 'system',
+          trigger: triggeredBy || 'save',
+        });
+      }
+    }).catch(function() {
+      // Backend call failed — write directly to Firestore as fallback
+      fbSetDoc('factory_inventory', 'current', {
+        bottles: { ...bottleInv },
+        total: Object.values(bottleInv).reduce((s, v) => s + v, 0),
+        updatedAt: new Date().toISOString(),
+        updatedBy: session?.username || 'system',
+        trigger: triggeredBy || 'save',
+      });
+    });
+  } else {
+    // api-client not loaded — write directly to Firestore
+    fbSetDoc('factory_inventory', 'current', {
+      bottles: { ...bottleInv },
+      total: Object.values(bottleInv).reduce((s, v) => s + v, 0),
+      updatedAt: new Date().toISOString(),
+      updatedBy: session?.username || 'system',
+      trigger: triggeredBy || 'save',
+    });
+  }
 }
 
 // ---- Manager Password Modal (required for any delete action) ----
