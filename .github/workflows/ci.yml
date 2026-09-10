@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, staging]
   pull_request:
     branches: [main]
 
@@ -58,3 +58,42 @@ jobs:
       - name: Type-check + build
         working-directory: backend
         run: npm run build
+
+  # Live, READ-ONLY smoke against the real deployed URL (staging or prod) —
+  # mirrors the CRM repo's qa-live job. Never creates/edits/deletes data, so
+  # it's safe to run against real environments. Authenticated checks self-skip
+  # until QA_STG_EMAIL/QA_STG_PASSWORD secrets are added to this repo.
+  qa-live:
+    needs: test
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Wait for the deployment to settle
+        run: sleep 30
+
+      - name: Live QA smoke
+        env:
+          QA_TARGET_URL: ${{ github.ref == 'refs/heads/staging' && 'https://aravadistillery-factory-control-staging.vercel.app' || 'https://aravadistillery-factory-control.vercel.app' }}
+          QA_EMAIL: ${{ secrets.QA_STG_EMAIL }}
+          QA_PASSWORD: ${{ secrets.QA_STG_PASSWORD }}
+        run: npx playwright test --config=playwright.qa.config.js
+
+      - name: Upload test artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-live-report
+          path: playwright-report/
+          retention-days: 14
