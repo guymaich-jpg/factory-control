@@ -94,13 +94,18 @@ service cloud.firestore {
     }
 
     // ── Factory inventory (singleton doc: current) ───────────
-    // ⚠️ INTERIM: client writes allowed while the backend Admin SDK
-    // credential (Vercel FIREBASE_PRIVATE_KEY) is repaired. Flip back to
-    // `write: if false` once backend writes succeed. Keep identical to the
-    // CRM repo's copy.
+    // Backend-only (single writer). The Vercel backend Admin SDK
+    // credential is confirmed working and the Factory app already
+    // writes through /api/inventory first, falling back to a direct
+    // client write only if the backend call fails — but with rules
+    // now write:false, that fallback is also rejected. Deliberate: it
+    // makes inventory sync failures visible (console warning) instead
+    // of silently succeeding via a path any authenticated client could
+    // otherwise use to write arbitrary stock data. Admin SDK writes
+    // bypass rules entirely, so the backend path is unaffected.
     match /factory_inventory/{docId} {
       allow read: if isAuth();
-      allow write: if isAuth();
+      allow write: if false;
     }
 
     // ── Factory users ────────────────────────────────────────
@@ -132,14 +137,12 @@ service cloud.firestore {
     }
 
     // ── Stock levels (Factory → CRM sync) ────────────────────
-    // ⚠️ INTERIM: client writes allowed while the backend Admin SDK
-    // credential (Vercel FIREBASE_PRIVATE_KEY) is repaired — the Factory web
-    // app is currently the only working writer. Flip back to `write: if false`
-    // (single-writer, backend-only) once backend writes succeed. Keep
-    // identical to the CRM repo's copy.
+    // Backend-only (single writer) — see factory_inventory above for the
+    // same rationale. The CRM never writes this collection; only the
+    // Factory backend does, via the Admin SDK (bypasses rules).
     match /stockLevels/{docId} {
       allow read: if isAuth();
-      allow write: if isAuth();
+      allow write: if false;
     }
 
     // ── CRM clients (soft-delete design; hard delete manager-only) ──
