@@ -35,3 +35,26 @@ jobs:
           name: playwright-report
           path: tests/e2e/report/
           retention-days: 14
+
+  # backend/ is the Admin-SDK-privileged Vercel serverless code (invitations,
+  # env injection, the stockLevels single-writer endpoint) — previously had
+  # no CI coverage at all, so a TypeScript regression there would only ever
+  # surface at Vercel deploy time.
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Type-check + build
+        working-directory: backend
+        run: npm run build

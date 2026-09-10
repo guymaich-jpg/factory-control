@@ -42,12 +42,14 @@ test.describe('Permissions - Admin', () => {
   });
 
   test('admin sees all nav items', async ({ page }) => {
+    // The standalone inventory nav item was removed in v2.11.0 — the home
+    // "declare" flow is now the single entry point for inventory (#114).
     await expect(page.locator('[data-nav="backoffice"]')).toBeVisible();
     await expect(page.locator('[data-nav="home"]')).toBeVisible();
     await expect(page.locator('[data-nav="receiving"]')).toBeVisible();
     await expect(page.locator('[data-nav="production"]')).toBeVisible();
+    await expect(page.locator('[data-nav="spiritStock"]')).toBeVisible();
     await expect(page.locator('[data-nav="bottling"]')).toBeVisible();
-    await expect(page.locator('[data-nav="inventory"]')).toBeVisible();
   });
 
   test('admin cannot delete themselves', async ({ page }) => {

@@ -61,11 +61,12 @@ test.describe('Language: In-app', () => {
     await expect(page.locator('.welcome-card h2')).toContainText('Welcome');
     expect(await page.evaluate(() => document.documentElement.dir)).toBe('ltr');
 
-    // All nav labels translated to English
+    // All nav labels translated to English (inventory nav item removed in
+    // v2.11.0 — see #114; spiritStock replaces it in this list)
     await expect(page.locator('[data-nav="home"]')).toContainText('Home');
     await expect(page.locator('[data-nav="receiving"]')).toContainText('Receiving');
     await expect(page.locator('[data-nav="production"]')).toContainText('Production');
+    await expect(page.locator('[data-nav="spiritStock"]')).toContainText('Spirit');
     await expect(page.locator('[data-nav="bottling"]')).toContainText('Bottling');
-    await expect(page.locator('[data-nav="inventory"]')).toContainText('Inventory');
   });
 });

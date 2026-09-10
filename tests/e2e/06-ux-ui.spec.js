@@ -100,7 +100,10 @@ test.describe('Dashboard UI', () => {
     await page.click('.hub-tile >> nth=0');
     await page.click('.menu-row[data-screen="dashboard"]');
     await expect(page.locator('.stat-card')).toHaveCount(3);
-    await expect(page.locator('.module-card')).toHaveCount(7);
+    // 6 modules as of v2.11.0 — inventory dropped from the dashboard grid
+    // when the standalone inventory screen was removed (#114); it's now
+    // surfaced via the home "declare" flow instead of a module card.
+    await expect(page.locator('.module-card')).toHaveCount(6);
     await expect(page.locator('.mc-count').first()).toBeVisible();
   });
 

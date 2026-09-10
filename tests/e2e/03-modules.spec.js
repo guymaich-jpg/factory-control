@@ -86,23 +86,9 @@ test.describe('Bottling Module', () => {
   });
 });
 
-test.describe('Inventory Module', () => {
-  test.beforeEach(async ({ page }) => {
-    await freshApp(page);
-    await loginAsManager(page);
-    await page.click('[data-nav="inventory"]');
-  });
-
-  test('inventory tabs display and switch correctly', async ({ page }) => {
-    await expect(page.locator('[data-inv-tab="bottles"]')).toBeVisible();
-    await expect(page.locator('[data-inv-tab="raw"]')).toBeVisible();
-    await expect(page.locator('[data-inv-tab="versions"]')).toHaveCount(0);
-
-    await page.click('[data-inv-tab="raw"]');
-    await expect(page.locator('#inv-raw')).toBeVisible();
-    await expect(page.locator('#inv-bottles')).not.toBeVisible();
-  });
-});
+// The standalone tabbed Inventory Module (bottles/raw/versions tabs) was
+// removed in v2.11.0 (#114) — the home "declare" flow is now the single
+// source of truth for inventory, with no equivalent tabbed UI to test here.
 
 test.describe('Spirit Stock Screen', () => {
   test('spirit stock nav item exists and screen loads', async ({ page }) => {

@@ -96,79 +96,9 @@ test.describe('Security: Delete requires manager password', () => {
   });
 });
 
-// ============================================================
-// Inventory 1-Minute Buffer
-// ============================================================
-test.describe('Inventory: 1-minute buffer', () => {
-  test('buffer correctly separates fresh vs old records', async ({ page }) => {
-    await freshApp(page);
-    await loginAsManager(page);
-
-    // Fresh record — should be pending
-    await page.evaluate(() => {
-      const fresh = {
-        id: 'fresh001', createdAt: new Date().toISOString(),
-        drinkType: 'drink_arak', decision: 'approved', bottleCount: '100',
-        createdBy: 'manager'
-      };
-      localStorage.setItem('factory_bottling', JSON.stringify([fresh]));
-    });
-    const freshResult = await page.evaluate(() => {
-      const { visible, pending } = getBufferedRecords('factory_bottling');
-      return { visible: visible.length, pending };
-    });
-    expect(freshResult.visible).toBe(0);
-    expect(freshResult.pending).toBe(1);
-
-    // Old record — should be visible
-    await page.evaluate(() => {
-      const old = {
-        id: 'old001', createdAt: new Date(Date.now() - 120000).toISOString(),
-        drinkType: 'drink_arak', decision: 'approved', bottleCount: '50',
-        createdBy: 'manager'
-      };
-      localStorage.setItem('factory_bottling', JSON.stringify([old]));
-    });
-    const oldResult = await page.evaluate(() => {
-      const { visible, pending } = getBufferedRecords('factory_bottling');
-      return { visible: visible.length, pending };
-    });
-    expect(oldResult.visible).toBe(1);
-    expect(oldResult.pending).toBe(0);
-  });
-
-  test('pending banner shows/hides based on buffer state', async ({ page }) => {
-    await freshApp(page);
-    await loginAsManager(page);
-
-    // Fresh record → banner visible
-    await page.evaluate(() => {
-      const fresh = {
-        id: 'fresh002', createdAt: new Date().toISOString(),
-        drinkType: 'drink_gin', decision: 'approved', bottleCount: '20',
-        createdBy: 'worker1'
-      };
-      localStorage.setItem('factory_bottling', JSON.stringify([fresh]));
-      currentModule = 'inventory'; currentView = 'list'; renderApp();
-    });
-    await expect(page.locator('.inv-pending-banner')).toBeVisible();
-
-    // All old records → no banner
-    await page.evaluate(() => {
-      const old = {
-        id: 'old002', createdAt: new Date(Date.now() - 120000).toISOString(),
-        drinkType: 'drink_gin', decision: 'approved', bottleCount: '20',
-        createdBy: 'worker1'
-      };
-      localStorage.setItem('factory_bottling', JSON.stringify([old]));
-      localStorage.setItem('factory_rawMaterials', '[]');
-      localStorage.setItem('factory_dateReceiving', '[]');
-      localStorage.setItem('factory_fermentation', '[]');
-      currentModule = 'inventory'; currentView = 'list'; renderApp();
-    });
-    await expect(page.locator('.inv-pending-banner')).not.toBeVisible();
-  });
-});
+// getBufferedRecords() and the standalone inventory list/pending-banner UI
+// were removed in v2.11.0 (#114) along with the old tabbed Inventory Module
+// — no equivalent buffering behavior exists in the current declare flow.
 
 // ============================================================
 // Backoffice Access Control
